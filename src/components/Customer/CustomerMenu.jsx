@@ -6,14 +6,10 @@ import { BILLING } from '@/constants'
 
 export default function CustomerMenu() {
   const { loadMenu, handlePlaceOrder } = useKayan()
-  const { menu, cart, mySession, addToCart, cartTotal, cartCount } = useKayanStore(s => ({
-    menu:       s.menu,
-    cart:       s.cart,
-    mySession:  s.mySession,
-    addToCart:  s.addToCart,
-    cartTotal:  s.cartTotal,
-    cartCount:  s.cartCount,
-  }))
+ const menu      = useKayanStore(s => s.menu)
+const cart      = useKayanStore(s => s.cart)
+const mySession = useKayanStore(s => s.mySession)
+const addToCart = useKayanStore(s => s.addToCart)
 
   const [activeCategory, setActiveCategory] = useState('hot')
 
@@ -27,8 +23,8 @@ export default function CustomerMenu() {
     await handlePlaceOrder(mySession.id, cart)
   }
 
-  const total = cartTotal()
-  const count = cartCount()
+ const count = cart.reduce((s, i) => s + i.qty, 0)
+const total = cart.reduce((s, i) => s + i.price * i.qty, 0)
 
   return (
     <div className="p-5 animate-fade-in" style={{ paddingBottom: count > 0 ? 140 : 24 }}>

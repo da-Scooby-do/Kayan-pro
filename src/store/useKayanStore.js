@@ -1,41 +1,26 @@
-// ─────────────────────────────────────────────────────────────
-//  Kayan — Global State (Zustand)
-//
-//  This store holds the "live" runtime state that multiple
-//  components read and write:
-//    • Auth / profile
-//    • Seats map
-//    • Active sessions (admin)
-//    • Order queue (admin)
-//    • Customer's own session + orders
-//    • Cart
-//    • Toast notifications
-//
-//  Database interactions (fetching, mutations) live in hooks/
-//  useKayan.js — they update this store after each call.
-// ─────────────────────────────────────────────────────────────
 import { create } from 'zustand'
+import { subscribeWithSelector } from 'zustand/middleware'
 
-const useKayanStore = create((set, get) => ({
+const useKayanStore = create(
+  subscribeWithSelector((set, get) => ({
 
-  // ── Auth ────────────────────────────────────────────────────
-  user:    null,  // Supabase auth user object
-  profile: null,  // profiles table row
+  // ── Auth ──────────────────────────────────────────────────
+  user:        null,
+  profile:     null,
   authLoading: true,
 
-  setUser:    (user)    => set({ user }),
-  setProfile: (profile) => set({ profile }),
-  setAuthLoading: (v)   => set({ authLoading: v }),
+  setUser:        (user)    => set({ user }),
+  setProfile:     (profile) => set({ profile }),
+  setAuthLoading: (v)       => set({ authLoading: v }),
 
-  // ── Rooms ───────────────────────────────────────────────────
+  // ── Rooms ─────────────────────────────────────────────────
   rooms: [],
   setRooms: (rooms) => set({ rooms }),
 
-  // ── Seats  { [roomId]: Seat[] } ──────────────────────────────
+  // ── Seats { [roomId]: Seat[] } ───────────────────────────
   seats: {},
   setSeats: (seats) => set({ seats }),
 
-  /** Patch a single seat that arrived via realtime. */
   patchSeat: (updatedSeat) => set(state => {
     const roomSeats = state.seats[updatedSeat.room_id] ?? []
     return {
@@ -48,7 +33,6 @@ const useKayanStore = create((set, get) => ({
     }
   }),
 
-  /** Toggle occupancy optimistically (admin manual toggle). */
   optimisticToggleSeat: (seatId, roomId) => set(state => {
     const roomSeats = state.seats[roomId] ?? []
     return {
@@ -61,58 +45,54 @@ const useKayanStore = create((set, get) => ({
     }
   }),
 
-  // ── Admin — Active Sessions ──────────────────────────────────
-  sessions: [],
+  // ── Admin — Sessions ─────────────────────────────────────
+  sessions:        [],
   sessionsLoading: false,
-  setSessionsLoading: (v) => set({ sessionsLoading: v }),
-  setSessions: (sessions) => set({ sessions }),
-
-  /** Remove a session from the list after checkout. */
-  removeSession: (sessionId) => set(state => ({
+  setSessionsLoading: (v)        => set({ sessionsLoading: v }),
+  setSessions:        (sessions) => set({ sessions }),
+  removeSession: (sessionId)     => set(state => ({
     sessions: state.sessions.filter(s => s.id !== sessionId),
   })),
 
-  // ── Admin — Order Queue ──────────────────────────────────────
-  orders: [],
+  // ── Admin — Orders ────────────────────────────────────────
+  orders:        [],
   ordersLoading: false,
-  setOrdersLoading: (v) => set({ ordersLoading: v }),
-  setOrders: (orders) => set({ orders }),
+  setOrdersLoading: (v)      => set({ ordersLoading: v }),
+  setOrders:        (orders) => set({ orders }),
 
-  /** Add a new order that arrived via realtime INSERT. */
   addOrder: (order) => set(state => ({
     orders: [order, ...state.orders],
   })),
 
-  /** Patch an existing order (status change). */
   patchOrder: (updatedOrder) => set(state => ({
     orders: state.orders.map(o =>
       o.id === updatedOrder.id ? { ...o, ...updatedOrder } : o
     ),
   })),
 
-  // ── Customer — My Session ────────────────────────────────────
-  mySession:  null,
-  myOrders:   [],
+  // ── Customer ──────────────────────────────────────────────
+  mySession:       null,
+  myOrders:        [],
   myOrdersLoading: false,
 
-  setMySession:        (s) => set({ mySession: s }),
-  setMyOrders:         (o) => set({ myOrders: o }),
-  setMyOrdersLoading:  (v) => set({ myOrdersLoading: v }),
+  setMySession:       (s) => set({ mySession: s }),
+  setMyOrders:        (o) => set({ myOrders: o }),
+  setMyOrdersLoading: (v) => set({ myOrdersLoading: v }),
 
-  /** Append a new order to the customer's own order list. */
   addMyOrder: (order) => set(state => ({
     myOrders: [order, ...state.myOrders],
   })),
 
-  /** Update an order status in the customer view. */
   patchMyOrder: (updatedOrder) => set(state => ({
     myOrders: state.myOrders.map(o =>
       o.id === updatedOrder.id ? { ...o, ...updatedOrder } : o
     ),
   })),
 
-  // ── Cart ────────────────────────────────────────────────────
-  cart: [],  // [{ id, name, name_ar, price, emoji, qty }]
+  // ── Cart ──────────────────────────────────────────────────
+  // cartTotal / cartCount are COMPUTED values, not store functions
+  // — derive them in components with: cart.reduce(...)
+  cart: [],
 
   addToCart: (item) => set(state => {
     const existing = state.cart.find(c => c.id === item.id)
@@ -127,31 +107,42 @@ const useKayanStore = create((set, get) => ({
 
   clearCart: () => set({ cart: [] }),
 
-  cartTotal:   () => get().cart.reduce((s, i) => s + i.price * i.qty, 0),
-  cartCount:   () => get().cart.reduce((s, i) => s + i.qty, 0),
-
-  // ── Customers (admin use) ────────────────────────────────────
-  customers: [],
+  // ── Customers (admin picker) ──────────────────────────────
+  customers:        [],
   customersLoading: false,
-  setCustomers: (customers) => set({ customers }),
-  setCustomersLoading: (v) => set({ customersLoading: v }),
+  setCustomers:        (customers) => set({ customers }),
+  setCustomersLoading: (v)         => set({ customersLoading: v }),
 
-  // ── Menu ────────────────────────────────────────────────────
+  // ── Menu ──────────────────────────────────────────────────
   menu: [],
   setMenu: (menu) => set({ menu }),
 
-  // ── Toast ───────────────────────────────────────────────────
-  toast: null,  // { msg, type: 'ok' | 'info' | 'error' }
+  // ── Toast ─────────────────────────────────────────────────
+  toast: null,
+  _toastTimer: null,
 
   showToast: (msg, type = 'ok') => {
-    set({ toast: { msg, type } })
-    setTimeout(() => set({ toast: null }), 3400)
+    // Clear any existing timer to prevent stacking
+    const existing = get()._toastTimer
+    if (existing) clearTimeout(existing)
+    const timer = setTimeout(() => set({ toast: null, _toastTimer: null }), 3200)
+    set({ toast: { msg, type }, _toastTimer: timer })
   },
 
-  // ── New-order alert (admin) ──────────────────────────────────
+  // ── New-order alert ───────────────────────────────────────
   hasNewOrder: false,
   setHasNewOrder: (v) => set({ hasNewOrder: v }),
 
-}))
+  // ── Reset (called on sign out) ────────────────────────────
+  // Wipes all data so no stale state bleeds between sessions
+  resetStore: () => set({
+    rooms: [], seats: {}, sessions: [], orders: [],
+    mySession: null, myOrders: [], cart: [],
+    customers: [], menu: [], toast: null,
+    hasNewOrder: false, sessionsLoading: false,
+    ordersLoading: false, myOrdersLoading: false,
+  }),
+
+})))
 
 export default useKayanStore

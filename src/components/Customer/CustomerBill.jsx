@@ -81,8 +81,7 @@ export default function CustomerBill() {
 
       {/* Active session card */}
       <div
-        className="glass rounded-2xl border border-kayan-border p-6 mb-4"
-        style={{ animation: 'glow 5s ease-in-out infinite' }}
+     className="glass rounded-2xl border border-kayan-border p-6 card-hover"
       >
         {/* Session status */}
         <div className="flex items-center justify-between mb-5">

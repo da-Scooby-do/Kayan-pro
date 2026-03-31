@@ -21,7 +21,9 @@ const VIEWS = {
 function useAdminPresence() {
   useEffect(() => {
     const ping = async () => {
-      await supabase.rpc('ping_admin_presence').catch(() => {})
+      try {
+        await supabase.rpc('ping_admin_presence')
+      } catch { /* silent — presence is non-critical */ }
     }
 
     // Ping immediately on mount
@@ -32,7 +34,7 @@ function useAdminPresence() {
 
     // Mark offline when admin leaves the dashboard
     const goOffline = () => {
-      supabase.rpc('set_admin_offline').catch(() => {})
+      supabase.rpc('set_admin_offline').then(() => {}).catch(() => {})
     }
 
     window.addEventListener('beforeunload', goOffline)

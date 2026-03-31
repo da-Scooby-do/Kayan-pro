@@ -1,30 +1,20 @@
-// ─────────────────────────────────────────────────────────────
-//  useAuth — Supabase Auth lifecycle hook
-//  Mount this once in App.jsx; it hydrates the Zustand store
-//  with the current session and subscribes to auth changes.
-// ─────────────────────────────────────────────────────────────
-import { useEffect } from 'react'
-import { supabase, fetchProfile, signUp, signIn, signOut } from '@/lib/supabase'
+import { useEffect, useCallback } from 'react'
+import { supabase, fetchProfile, signUp, signIn } from '@/lib/supabase'
 import useKayanStore from '@/store/useKayanStore'
 
 export function useAuth() {
-  const { setUser, setProfile, setAuthLoading, showToast } = useKayanStore()
+  const { setUser, setProfile, setAuthLoading, showToast, resetStore } = useKayanStore()
 
-  // Load profile helper
-const loadProfile = async (authUser) => {
-  if (!authUser) { setProfile(null); return }
-  try {
-    const profile = await fetchProfile(authUser.id)
-    setProfile(profile)
-  } catch {
-    // Profile row missing — set null so the app doesn't hang
-    setProfile(null)
-    // Sign the user out so they see the login page instead of black screen
-    await supabase.auth.signOut()
-  }
-}
+  const loadProfile = useCallback(async (authUser) => {
+    if (!authUser) { setProfile(null); return }
+    try {
+      const profile = await fetchProfile(authUser.id)
+      setProfile(profile)
+    } catch {
+      setProfile(null)
+    }
+  }, [setProfile])
 
-  // Bootstrap on mount
   useEffect(() => {
     let mounted = true
 
@@ -35,7 +25,6 @@ const loadProfile = async (authUser) => {
       loadProfile(authUser).finally(() => setAuthLoading(false))
     })
 
-    // Listen for login / logout / token refresh
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
       async (_event, session) => {
         if (!mounted) return
@@ -50,11 +39,9 @@ const loadProfile = async (authUser) => {
       mounted = false
       subscription.unsubscribe()
     }
-  }, []) // eslint-disable-line react-hooks/exhaustive-deps
+  }, []) // eslint-disable-line
 
-  // ── Exposed actions ─────────────────────────────────────────
-
-  const handleSignUp = async (email, password, fullName) => {
+  const handleSignUp = useCallback(async (email, password, fullName) => {
     try {
       await signUp({ email, password, fullName })
       showToast('✓ Account created! Check your email to confirm.', 'ok')
@@ -62,9 +49,9 @@ const loadProfile = async (authUser) => {
       showToast(`Sign up failed: ${err.message}`, 'error')
       throw err
     }
-  }
+  }, [showToast])
 
-  const handleSignIn = async (email, password) => {
+  const handleSignIn = useCallback(async (email, password) => {
     try {
       await signIn({ email, password })
       showToast('✓ Welcome back!', 'ok')
@@ -72,12 +59,20 @@ const loadProfile = async (authUser) => {
       showToast(`Sign in failed: ${err.message}`, 'error')
       throw err
     }
-  }
+  }, [showToast])
 
-  const handleSignOut = async () => {
-    await signOut()
-    showToast('Signed out successfully.', 'info')
-  }
+  // ── Sign out: clear store FIRST, then Supabase ──────────────
+  // This makes the exit button feel instant — UI resets immediately
+  // even if the Supabase network call takes a moment.
+  const handleSignOut = useCallback(async () => {
+    // 1. Wipe all local state immediately → UI snaps to login screen
+    resetStore()
+    setUser(null)
+    setProfile(null)
+
+    // 2. Then tell Supabase (fire and forget — don't await)
+    supabase.auth.signOut().catch(() => {})
+  }, [resetStore, setUser, setProfile])
 
   return { handleSignUp, handleSignIn, handleSignOut }
 }

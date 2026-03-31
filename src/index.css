@@ -41,6 +41,15 @@
     -webkit-backdrop-filter: blur(10px);
   }
 
+  /* Replaces the heavy CSS glow animation on cards */
+  .card-hover {
+    transition: border-color .25s ease, box-shadow .25s ease;
+  }
+  .card-hover:hover {
+    border-color: rgba(201,168,76,0.28) !important;
+    box-shadow: 0 0 28px rgba(201,168,76,0.07);
+  }
+
   /* Animated gold gradient text */
   .gold-text {
     background: linear-gradient(135deg, #C9A84C 0%, #EFC95A 45%, #C9A84C 100%);
@@ -58,13 +67,21 @@
   }
 
   .seat-free {
-    @apply seat-btn bg-green-500/10 border-green-500/40 text-green-400
-           cursor-pointer hover:bg-green-500/25 hover:scale-110;
+    @apply seat-btn bg-green-500/10 border-green-500/40 text-green-400 cursor-pointer;
+    transition: background .15s ease, transform .1s ease;
+  }
+  .seat-free:hover {
+    background: rgba(34,197,94,0.22);
+    transform: scale(1.08);
   }
 
   .seat-occupied {
-    @apply seat-btn bg-red-500/10 border-red-500/35 text-red-400
-           cursor-pointer hover:bg-red-500/25 hover:scale-110;
+    @apply seat-btn bg-red-500/10 border-red-500/35 text-red-400 cursor-pointer;
+    transition: background .15s ease, transform .1s ease;
+  }
+  .seat-occupied:hover {
+    background: rgba(239,68,68,0.22);
+    transform: scale(1.08);
   }
 
   .seat-readonly {

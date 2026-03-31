@@ -31,6 +31,7 @@ export default function AdminSessions() {
   return (
     <div className="p-7 max-w-3xl animate-fade-in">
 
+      {/* Header */}
       <div className="flex items-start justify-between flex-wrap gap-4 mb-6">
         <div>
           <p className="text-[9px] text-kayan-muted tracking-[3px] mb-1 uppercase">Admin · Billing</p>
@@ -46,6 +47,7 @@ export default function AdminSessions() {
         </button>
       </div>
 
+      {/* Stats */}
       {sessions.length > 0 && (
         <div className="grid grid-cols-3 gap-3 mb-7">
           {[
@@ -75,8 +77,10 @@ export default function AdminSessions() {
       )}
 
       {!sessionsLoading && sessions.length === 0 && (
-        <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }}
-          className="glass rounded-2xl border border-kayan-border p-12 text-center">
+        <motion.div
+          initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }}
+          className="glass rounded-2xl border border-kayan-border p-12 text-center"
+        >
           <div className="text-5xl mb-4">🪑</div>
           <p className="font-display text-xl font-semibold mb-2">No Active Sessions</p>
           <p className="text-kayan-sub text-sm mb-6 max-w-xs mx-auto">
@@ -93,25 +97,17 @@ export default function AdminSessions() {
           {sessions.map(session => {
             const bill = calcBill(session.check_in, session.orders_total ?? 0, session.package ?? {})
             return (
-              <motion.div key={session.id} layout
+              <motion.div
+                key={session.id} layout
                 initial={{ opacity: 0, y: 14 }} animate={{ opacity: 1, y: 0 }}
                 exit={{ opacity: 0, scale: 0.97, y: -6 }}
-                className="glass rounded-2xl border border-kayan-border p-6"
-                style={{ animation: 'glow 5s ease-in-out infinite' }}>
-
+              className="glass rounded-2xl border border-kayan-border p-6 card-hover"
+              >
                 <div className="flex items-start justify-between flex-wrap gap-3 mb-5">
                   <div className="flex items-center gap-3">
                     <Avatar initial={(session.customer_name ?? 'G')[0]} size={48} />
                     <div>
-                      {/* Name + unique code */}
-                      <div className="flex items-center gap-2 mb-0.5">
-                        <p className="text-base font-semibold">{session.customer_name}</p>
-                        {session.customer_username && (
-                          <span className="text-[9px] text-kayan-muted bg-white/[0.04] px-1.5 py-0.5 rounded-md font-mono tracking-wide">
-                            {session.customer_username}
-                          </span>
-                        )}
-                      </div>
+                      <p className="text-base font-semibold">{session.customer_name}</p>
                       <p className="text-xs text-kayan-sub">
                         {session.room_name} · Seat {session.seat_id?.split('-')[1]}
                       </p>
@@ -149,11 +145,13 @@ export default function AdminSessions() {
                   ))}
                 </div>
 
-                <button onClick={() => setCheckoutTarget(session)}
+                <button
+                  onClick={() => setCheckoutTarget(session)}
                   className="w-full py-3 rounded-xl font-bold text-sm text-kayan-gold
                              bg-gradient-to-r from-kayan-gold/15 to-kayan-gold/[0.06]
                              border border-kayan-border hover:border-kayan-gold/40
-                             transition-all duration-200 cursor-pointer">
+                             transition-all duration-200 cursor-pointer"
+                >
                   Process Checkout — {bill.total} EGP →
                 </button>
               </motion.div>
@@ -163,12 +161,18 @@ export default function AdminSessions() {
       </div>
 
       {showOpenSession && (
-        <AdminOpenSession onClose={() => setShowOpenSession(false)} onSuccess={() => loadActiveSessions()} />
+        <AdminOpenSession
+          onClose={() => setShowOpenSession(false)}
+          onSuccess={() => loadActiveSessions()}
+        />
       )}
 
       {checkoutTarget && (
-        <CheckoutModal session={checkoutTarget} onClose={() => setCheckoutTarget(null)}
-          onSuccess={() => { setCheckoutTarget(null); loadActiveSessions() }} />
+        <CheckoutModal
+          session={checkoutTarget}
+          onClose={() => setCheckoutTarget(null)}
+          onSuccess={() => { setCheckoutTarget(null); loadActiveSessions() }}
+        />
       )}
     </div>
   )
