@@ -4,6 +4,7 @@ import { useAuth } from '@/hooks/useAuth'
 export default function LoginView({ onSwitch }) {
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
+  const [showPassword, setShowPassword] = useState(false) // Added state
   const { handleSignIn } = useAuth()
 
   const onSubmit = async (e) => {
@@ -22,16 +23,30 @@ export default function LoginView({ onSwitch }) {
             className="w-full bg-kayan-bg/50 border border-kayan-border-dim rounded-xl px-4 py-3 text-sm outline-none"
             required 
           />
-          <input 
-            type="password" placeholder="Password" value={password}
-            onChange={(e) => setPassword(e.target.value)}
-            className="w-full bg-kayan-bg/50 border border-kayan-border-dim rounded-xl px-4 py-3 text-sm outline-none"
-            required 
-          />
+          
+          {/* Updated Password Field */}
+          <div className="relative w-full">
+            <input 
+              type={showPassword ? "text" : "password"} 
+              placeholder="Password" 
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
+              className="w-full bg-kayan-bg/50 border border-kayan-border-dim rounded-xl px-4 py-3 pr-16 text-sm outline-none"
+              required 
+            />
+            <button
+              type="button"
+              onClick={() => setShowPassword(!showPassword)}
+              className="absolute right-4 top-1/2 -translate-y-1/2 text-[10px] font-bold tracking-widest text-kayan-muted hover:text-kayan-gold transition-colors"
+            >
+              {showPassword ? "HIDE" : "SHOW"}
+            </button>
+          </div>
+
           <button type="submit" className="w-full py-4 bg-kayan-gold text-kayan-bg font-bold rounded-xl text-xs tracking-widest uppercase">
             LOGIN →
           </button>
-          <button type="button" onClick={onSwitch} className="text-[10px] text-kayan-muted uppercase tracking-widest pt-2">
+          <button type="button" onClick={onSwitch} className="text-[10px] text-kayan-muted uppercase tracking-widest pt-2 hover:text-kayan-gold transition-colors">
             Don't have an account? Sign Up
           </button>
         </form>
