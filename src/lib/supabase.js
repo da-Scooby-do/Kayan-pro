@@ -283,15 +283,24 @@ export async function fetchMenu() {
 
 /**
  * Admin: fetch all pending/preparing orders with customer & room context.
- * Uses the pending_orders_view created in the schema.
+ * Bypasses the view to ensure we get the nested customer profile name.
  */
 export async function fetchPendingOrders() {
   const { data, error } = await supabase
-    .from('pending_orders_view')
-    .select('*')
-    .order('created_at')
-  if (error) throw error
-  return data ?? []
+    .from('orders')
+    .select(`
+      *,
+      item:menu_items(*),
+      session:sessions (
+        seat:seats(seat_number, room_id),
+        profile:profiles(username, full_name) 
+      )
+    `)
+    .in('status', ['pending', 'preparing'])
+    .order('created_at', { ascending: false });
+
+  if (error) throw error;
+  return data ?? [];
 }
 
 /**
