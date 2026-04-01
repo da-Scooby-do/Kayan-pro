@@ -8,11 +8,13 @@ import { useKayan }        from '@/hooks/useKayan'
 import { useAdminRealtime } from '@/hooks/useRealtime'
 import useKayanStore        from '@/store/useKayanStore'
 import { supabase }         from '@/lib/supabase'
+import AdminMenu from './AdminMenu'
 
 const VIEWS = {
   orders:   AdminOrders,
   seats:    AdminSeats,
   sessions: AdminSessions,
+  menu:     AdminMenu,
 }
 
 // ── Admin presence heartbeat ──────────────────────────────────
