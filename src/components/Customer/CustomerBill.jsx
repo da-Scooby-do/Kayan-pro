@@ -195,7 +195,6 @@ export default function CustomerBill() {
             return (
               <motion.div
                 key={order.id}
-                layout
                 className="flex items-center justify-between px-4 py-3
                            bg-white/[0.024] rounded-xl border border-white/[0.04]"
               >
