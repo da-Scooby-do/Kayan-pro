@@ -266,12 +266,24 @@ export async function getSessionCost(sessionId) {
 //  MENU
 // ═══════════════════════════════════════════════════════════
 
-/** Fetch all available menu items. */
+/** Fetch all available menu items (Customer view). */
 export async function fetchMenu() {
   const { data, error } = await supabase
     .from('menu_items')
     .select('*')
     .eq('is_available', true)
+    .order('sort_order')
+  if (error) throw error
+  return data ?? []
+}
+
+/**
+ * Admin: Fetch ALL menu items (including out of stock).
+ */
+export async function fetchAdminMenu() {
+  const { data, error } = await supabase
+    .from('menu_items')
+    .select('*')
     .order('sort_order')
   if (error) throw error
   return data ?? []
@@ -305,6 +317,7 @@ export async function fetchPendingOrders() {
 
 /**
  * Fetch all orders belonging to a specific session.
+ * Capped to 50 items for speed!
  */
 export async function fetchSessionOrders(sessionId) {
   const { data, error } = await supabase
@@ -312,6 +325,7 @@ export async function fetchSessionOrders(sessionId) {
     .select(`*, item:menu_items ( name, name_ar, emoji, price )`)
     .eq('session_id', sessionId)
     .order('created_at', { ascending: false })
+    .limit(50) // <-- SPEED OPTIMIZATION ADDED HERE
   if (error) throw error
   return data ?? []
 }

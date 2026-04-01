@@ -1,13 +1,16 @@
-import React, { useState, useEffect } from 'react'
+import React, { useState, useEffect, lazy, Suspense } from 'react'
 import { useAuth } from '@/hooks/useAuth'
 import useKayanStore from '@/store/useKayanStore'
 import { supabase } from '@/lib/supabase'
 
-import LoginView     from "@/components/Shared/LoginView"
-import SignUpView    from "@/components/Shared/SignUpView"
-import AdminLayout   from "@/components/Admin/AdminLayout"
-import CustomerLayout from "@/components/Customer/CustomerLayout"
-import OwnerLayout   from "@/components/Owner/OwnerLayout"
+// 1. Keep Auth Views static (They need to load instantly for logged-out users)
+import LoginView    from "@/components/Shared/LoginView"
+import SignUpView   from "@/components/Shared/SignUpView"
+
+// 2. Lazy Load the heavy Dashboards (Code Splitting)
+const AdminLayout    = lazy(() => import("@/components/Admin/AdminLayout"))
+const CustomerLayout = lazy(() => import("@/components/Customer/CustomerLayout"))
+const OwnerLayout    = lazy(() => import("@/components/Owner/OwnerLayout"))
 
 function App() {
   const { user, profile, authLoading, toast } = useKayanStore()
@@ -57,10 +60,28 @@ function App() {
     </div>
   )
 
-  // Route by role
-  if (profile.role === 'owner')                          return <OwnerLayout />
-  if (profile.role === 'admin' || profile.role === 'staff') return <AdminLayout />
-  return <CustomerLayout />
+  // 3. Determine which layout to show based on role
+  let LayoutComponent = CustomerLayout
+  if (profile.role === 'owner') {
+    LayoutComponent = OwnerLayout
+  } else if (profile.role === 'admin' || profile.role === 'staff') {
+    LayoutComponent = AdminLayout
+  }
+
+  // 4. Wrap the route in Suspense so React knows what to show while downloading the chunk
+  return (
+    <Suspense 
+      fallback={
+        <div className="min-h-screen bg-kayan-bg flex items-center justify-center">
+          <div className="animate-pulse text-kayan-gold tracking-widest text-[10px] uppercase">
+            Loading Workspace...
+          </div>
+        </div>
+      }
+    >
+      <LayoutComponent />
+    </Suspense>
+  )
 }
 
 export default App
