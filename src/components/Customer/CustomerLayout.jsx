@@ -4,7 +4,7 @@ import CustomerMap  from './CustomerMap'
 import CustomerMenu from './CustomerMenu'
 import CustomerBill from './CustomerBill'
 import { useKayan }                from '@/hooks/useKayan'
-import { useCustomerRealtime, 
+import { useCustomerRealtime,
          useCustomerSessionWatch } from '@/hooks/useRealtime'
 import { useAuth }                 from '@/hooks/useAuth'
 import useKayanStore               from '@/store/useKayanStore'
@@ -17,7 +17,6 @@ const TABS = [
 
 const VIEWS = { map: CustomerMap, menu: CustomerMenu, bill: CustomerBill }
 
-// Loading skeleton for the initial "Memory" sync
 function Shimmer({ className = '' }) {
   return <div className={`rounded-xl bg-white/[0.04] animate-pulse ${className}`} />
 }
@@ -41,75 +40,75 @@ function BootstrapSkeleton() {
 }
 
 export default function CustomerLayout() {
-  const [activeTab, setActiveTab] = useState('map')
+  const [activeTab,     setActiveTab]     = useState('map')
   const [bootstrapDone, setBootstrapDone] = useState(false)
 
   const { bootstrapCustomer } = useKayan()
   const { handleSignOut }     = useAuth()
 
-  const { user, mySession, rooms, profile } = useKayanStore(s => ({
-    user:      s.user,
-    mySession: s.mySession,
-    rooms:     s.rooms,
-    profile:   s.profile,
-  }))
+  const user      = useKayanStore(s => s.user)
+  const mySession = useKayanStore(s => s.mySession)
+  const rooms     = useKayanStore(s => s.rooms)
+  const profile   = useKayanStore(s => s.profile)
+  const cart      = useKayanStore(s => s.cart)
+  const count     = cart.reduce((s, i) => s + i.qty, 0)
 
-  // cart count computed directly to stay reactive
-  const cart  = useKayanStore(s => s.cart)
-  const count = cart.reduce((s, i) => s + i.qty, 0)
-
-  // ── 1. TRIGGERING THE "MEMORY" ON LOAD ──────────────────────
-  // This syncs the app state with Supabase as soon as the user is identified
+  // ── 1. Bootstrap on mount ───────────────────────────────────
   useEffect(() => {
     if (!user?.id) return
+
+    // If rooms already loaded (e.g. tab switch), skip skeleton
+    if (rooms.length > 0) {
+      setBootstrapDone(true)
+      return
+    }
+
     setBootstrapDone(false)
-    
-    // Remote Persistence: bootstrapCustomer fetches active session + orders
+
+    // Safety net — never hang > 6s regardless of network
+    const timeout = setTimeout(() => setBootstrapDone(true), 6000)
+
     bootstrapCustomer(user.id).finally(() => {
+      clearTimeout(timeout)
       setBootstrapDone(true)
     })
-  }, [user?.id, bootstrapCustomer])
 
-  // ── 2. REALTIME WATCHERS ────────────────────────────────────
-  // Watch for admin opening/closing THIS customer's session
+    return () => clearTimeout(timeout)
+  }, [user?.id]) // eslint-disable-line
+
+  // ── 2. Watch for admin opening/closing this customer's session
   useCustomerSessionWatch(user?.id)
 
-  // Watch for order status updates (e.g. coffee is ready)
+  // ── 3. Watch for order status updates
   useCustomerRealtime(mySession?.id)
 
-  const dataReady  = bootstrapDone && rooms.length > 0
+  // Show content once bootstrap done OR rooms already exist
+  const dataReady  = bootstrapDone || rooms.length > 0
   const ActiveView = VIEWS[activeTab]
 
   return (
-    <div 
-      className="min-h-screen flex flex-col bg-kayan-bg text-kayan-text"
-      style={{ maxWidth: 540, margin: '0 auto' }}
-    >
+    <div className="min-h-screen flex flex-col bg-kayan-bg text-kayan-text"
+         style={{ maxWidth: 540, margin: '0 auto' }}>
+
       {/* Top bar */}
       <header className="glass border-b border-kayan-border px-5 py-3
                          flex items-center justify-between sticky top-0 z-50">
         <div>
-          <h1 className="gold-text font-display text-2xl font-bold block leading-none">
-            كيان
-          </h1>
-          <p className="text-[8px] tracking-[3px] text-kayan-gold/40">
-            KAYAN WORKSPACE
-          </p>
+          <h1 className="gold-text font-display text-2xl font-bold block leading-none">كيان</h1>
+          <p className="text-[8px] tracking-[3px] text-kayan-gold/40">KAYAN WORKSPACE</p>
           {profile?.username && (
-            <p className="text-[9px] text-kayan-muted font-mono mt-0.5 leading-none">
-              @{profile.username}
+            <p className="text-[9px] text-kayan-muted font-mono leading-none mt-0.5">
+              {profile.username}
             </p>
           )}
         </div>
 
         <div className="flex items-center gap-3">
-          {/* Live session status dot (Persistent State Indicator) */}
+          {/* Live session status dot */}
           {bootstrapDone && (
             <div className="flex items-center gap-1.5">
               <span
-                className={`w-2 h-2 rounded-full flex-shrink-0 ${
-                  mySession ? 'bg-green-400' : 'bg-kayan-muted'
-                }`}
+                className={`w-2 h-2 rounded-full flex-shrink-0 ${mySession ? 'bg-green-400' : 'bg-kayan-muted'}`}
                 style={mySession ? { animation: 'pulse2 2s ease-in-out infinite' } : {}}
               />
               <span className="text-[10px] text-kayan-sub">
@@ -131,9 +130,9 @@ export default function CustomerLayout() {
           <AnimatePresence mode="wait">
             <motion.div
               key={activeTab}
-              initial={{ opacity: 0, y: 8 }}
-              animate={{ opacity: 1, y: 0 }}
-              exit={{ opacity: 0, y: -6 }}
+              initial={{ opacity: 0, y: 8  }}
+              animate={{ opacity: 1, y: 0  }}
+              exit={{   opacity: 0, y: -6  }}
               transition={{ duration: 0.18 }}
             >
               <ActiveView />
@@ -143,11 +142,8 @@ export default function CustomerLayout() {
       </main>
 
       {/* Bottom nav */}
-      <nav 
-        className="glass border-t border-kayan-border fixed bottom-0 left-0 right-0
-                   flex z-[60]" 
-        style={{ maxWidth: 540, margin: '0 auto' }}
-      >
+      <nav className="glass border-t border-kayan-border fixed bottom-0 left-0 right-0
+                      flex z-[60]" style={{ maxWidth: 540, margin: '0 auto' }}>
         {TABS.map(tab => {
           const isActive = activeTab === tab.id
           return (
@@ -165,8 +161,7 @@ export default function CustomerLayout() {
               {/* Cart badge */}
               {tab.id === 'menu' && count > 0 && (
                 <motion.span
-                  initial={{ scale: 0 }} 
-                  animate={{ scale: 1 }}
+                  initial={{ scale: 0 }} animate={{ scale: 1 }}
                   className="absolute top-1 right-[22%] bg-kayan-gold text-kayan-bg
                              text-[8px] font-bold rounded-full w-4 h-4
                              flex items-center justify-center"
@@ -175,12 +170,10 @@ export default function CustomerLayout() {
                 </motion.span>
               )}
 
-              {/* Bill live dot (Alerts user they have an active running tab) */}
+              {/* Bill live dot */}
               {tab.id === 'bill' && mySession && !isActive && (
-                <span 
-                  className="absolute top-1.5 right-[26%] w-1.5 h-1.5 rounded-full bg-green-400"
-                  style={{ animation: 'pulse2 2s ease-in-out infinite' }} 
-                />
+                <span className="absolute top-1.5 right-[26%] w-1.5 h-1.5 rounded-full bg-green-400"
+                      style={{ animation: 'pulse2 2s ease-in-out infinite' }} />
               )}
             </button>
           )

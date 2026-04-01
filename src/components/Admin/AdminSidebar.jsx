@@ -10,12 +10,10 @@ const NAV_ITEMS = [
 
 export default function AdminSidebar({ activeTab, onTabChange }) {
   const { handleSignOut } = useAuth()
-  const { profile, orders, rooms, seats } = useKayanStore(s => ({
-    profile: s.profile,
-    orders:  s.orders,
-    rooms:   s.rooms,
-    seats:   s.seats,
-  }))
+  const profile = useKayanStore(s => s.profile)
+  const orders  = useKayanStore(s => s.orders)
+  const rooms   = useKayanStore(s => s.rooms)
+  const seats   = useKayanStore(s => s.seats)
 
   const pendingCount = orders.filter(o => o.status === 'pending').length
 

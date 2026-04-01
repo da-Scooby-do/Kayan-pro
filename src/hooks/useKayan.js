@@ -1,5 +1,12 @@
 // ─────────────────────────────────────────────────────────────
 //  useKayan — Master database-interaction hook
+//
+//  Every component that needs to read or mutate data calls into
+//  this hook. It updates the Zustand store on success and
+//  surfaces errors via the toast system.
+//
+//  RULE: No component ever imports from @/lib/supabase directly.
+//        Everything flows through here.
 // ─────────────────────────────────────────────────────────────
 import { useCallback } from 'react'
 import {
@@ -24,6 +31,7 @@ import {
 import useKayanStore from '@/store/useKayanStore'
 
 export function useKayan() {
+  // Simple store subscription — correct pattern for a hook used inside components
   const store = useKayanStore()
 
   // ── Rooms + Seats ───────────────────────────────────────────
@@ -36,7 +44,7 @@ export function useKayan() {
     } catch (err) {
       store.showToast(`Failed to load rooms: ${err.message}`, 'error')
     }
-  }, [store])
+  }, []) // eslint-disable-line react-hooks/exhaustive-deps
 
   const loadSeats = useCallback(async () => {
     try {
@@ -46,17 +54,23 @@ export function useKayan() {
     } catch (err) {
       store.showToast(`Failed to load seats: ${err.message}`, 'error')
     }
-  }, [store])
+  }, []) // eslint-disable-line react-hooks/exhaustive-deps
 
+  /**
+   * Admin: manually toggle a seat (outside a session).
+   * Optimistically updates the store, then syncs with DB.
+   */
   const handleToggleSeat = useCallback(async (seatId, roomId, currentlyOccupied) => {
+    // Optimistic update for instant UI feedback
     store.optimisticToggleSeat(seatId, roomId)
     try {
       await toggleSeatOccupancy(seatId, !currentlyOccupied)
     } catch (err) {
-      store.optimisticToggleSeat(seatId, roomId) // Rollback
+      // Roll back on failure
+      store.optimisticToggleSeat(seatId, roomId)
       store.showToast(`Toggle failed: ${err.message}`, 'error')
     }
-  }, [store])
+  }, []) // eslint-disable-line react-hooks/exhaustive-deps
 
   // ── Menu ────────────────────────────────────────────────────
 
@@ -68,7 +82,7 @@ export function useKayan() {
     } catch (err) {
       store.showToast(`Failed to load menu: ${err.message}`, 'error')
     }
-  }, [store])
+  }, []) // eslint-disable-line react-hooks/exhaustive-deps
 
   // ── Admin: Customers ─────────────────────────────────────────
 
@@ -83,7 +97,7 @@ export function useKayan() {
     } finally {
       store.setCustomersLoading(false)
     }
-  }, [store])
+  }, []) // eslint-disable-line react-hooks/exhaustive-deps
 
   const checkCustomerSession = useCallback(async (userId) => {
     try {
@@ -106,11 +120,16 @@ export function useKayan() {
     } finally {
       store.setSessionsLoading(false)
     }
-  }, [store])
+  }, []) // eslint-disable-line react-hooks/exhaustive-deps
 
+  /**
+   * Admin: open a new session.
+   * @param {{ userId, seatId, packageId?, adminId }} params
+   */
   const handleOpenSession = useCallback(async (params) => {
     try {
       const session = await openSession(params)
+      // Refresh both sessions and seats
       await Promise.all([loadActiveSessions(), loadSeats()])
       store.showToast(`✓ Session opened for seat ${params.seatId}`, 'ok')
       return session
@@ -118,8 +137,15 @@ export function useKayan() {
       store.showToast(`Open session failed: ${err.message}`, 'error')
       throw err
     }
-  }, [loadActiveSessions, loadSeats, store])
+  }, [loadActiveSessions, loadSeats]) // eslint-disable-line react-hooks/exhaustive-deps
 
+  /**
+   * Admin: checkout a session.
+   * Calls the checkout_session() PG function which:
+   *   • calculates final bill with daily cap
+   *   • marks session as checked_out
+   *   • frees the seat
+   */
   const handleCheckout = useCallback(async (sessionId, adminId) => {
     try {
       const result = await checkoutSession(sessionId, adminId)
@@ -131,8 +157,11 @@ export function useKayan() {
       store.showToast(`Checkout failed: ${err.message}`, 'error')
       throw err
     }
-  }, [loadSeats, store])
+  }, [loadSeats]) // eslint-disable-line react-hooks/exhaustive-deps
 
+  /**
+   * Get a live bill preview for a session without checking out.
+   */
   const getLiveBill = useCallback(async (sessionId) => {
     try {
       return await getSessionCost(sessionId)
@@ -140,7 +169,7 @@ export function useKayan() {
       store.showToast(`Bill calculation failed: ${err.message}`, 'error')
       return null
     }
-  }, [store])
+  }, []) // eslint-disable-line react-hooks/exhaustive-deps
 
   // ── Admin: Orders ───────────────────────────────────────────
 
@@ -155,42 +184,37 @@ export function useKayan() {
     } finally {
       store.setOrdersLoading(false)
     }
-  }, [store])
+  }, []) // eslint-disable-line react-hooks/exhaustive-deps
 
+  /**
+   * Admin/Staff: advance an order to the next status.
+   */
   const handleUpdateOrderStatus = useCallback(async (orderId, newStatus) => {
     try {
       const updated = await updateOrderStatus(orderId, newStatus)
       store.patchOrder(updated)
-      const labels = { 
-        preparing: '⏳ Preparing…', 
-        ready: '✓ Order ready — customer notified.', 
-        delivered: '✓ Delivered.' 
-      }
+      const labels = { preparing: '⏳ Preparing…', ready: '✓ Order ready — customer notified.', delivered: '✓ Delivered.' }
       store.showToast(labels[newStatus] ?? 'Order updated.', 'ok')
       return updated
     } catch (err) {
       store.showToast(`Update failed: ${err.message}`, 'error')
       throw err
     }
-  }, [store])
+  }, []) // eslint-disable-line react-hooks/exhaustive-deps
 
-  // ── Customer: Remote Persistence ────────────────────────────
+  // ── Customer ────────────────────────────────────────────────
 
   const loadMySession = useCallback(async (userId) => {
-    if (!userId) return null
     try {
-      // "True Memory": Reaching into Supabase to find their active session
       const session = await fetchMyActiveSession(userId)
       store.setMySession(session)
       return session
     } catch (err) {
-      // We don't toast here usually because new users won't have a session
-      return null
+      store.showToast(`Could not load your session: ${err.message}`, 'error')
     }
-  }, [store])
+  }, []) // eslint-disable-line react-hooks/exhaustive-deps
 
   const loadMyOrders = useCallback(async (sessionId) => {
-    if (!sessionId) return
     store.setMyOrdersLoading(true)
     try {
       const orders = await fetchSessionOrders(sessionId)
@@ -201,10 +225,14 @@ export function useKayan() {
     } finally {
       store.setMyOrdersLoading(false)
     }
-  }, [store])
+  }, []) // eslint-disable-line react-hooks/exhaustive-deps
 
+  /**
+   * Customer: place all items currently in the cart.
+   * Clears the cart on success.
+   */
   const handlePlaceOrder = useCallback(async (sessionId, cart) => {
-    if (!cart.length || !sessionId) return
+    if (!cart.length) return
     try {
       const newOrders = await placeOrders(sessionId, cart)
       newOrders.forEach(o => store.addMyOrder(o))
@@ -215,7 +243,7 @@ export function useKayan() {
       store.showToast(`Order failed: ${err.message}`, 'error')
       throw err
     }
-  }, [store])
+  }, []) // eslint-disable-line react-hooks/exhaustive-deps
 
   // ── Admin: Move seat ────────────────────────────────────────
 
@@ -226,7 +254,7 @@ export function useKayan() {
       store.showToast(`Could not load seat info: ${err.message}`, 'error')
       return null
     }
-  }, [store])
+  }, []) // eslint-disable-line react-hooks/exhaustive-deps
 
   const handleMoveSeat = useCallback(async (sessionId, newSeatId) => {
     try {
@@ -237,9 +265,10 @@ export function useKayan() {
       store.showToast(`Move failed: ${err.message}`, 'error')
       throw err
     }
-  }, [loadSeats, store])
+  }, [loadSeats]) // eslint-disable-line react-hooks/exhaustive-deps
 
-  // ── Bootstrap Helpers ───────────────────────────────────────
+  // ── Bootstrap helpers ───────────────────────────────────────
+
 
   /** Load everything the admin dashboard needs on mount. */
   const bootstrapAdmin = useCallback(async () => {
@@ -251,29 +280,19 @@ export function useKayan() {
     ])
   }, [loadRooms, loadSeats, loadActiveSessions, loadPendingOrders])
 
-  /** * THE TRUE MEMORY BOOTSTRAP
-   * This is the "Engine" that makes your persistence work.
-   */
+  /** Load everything the customer app needs on mount. */
   const bootstrapCustomer = useCallback(async (userId) => {
-    if (!userId) return
-
-    // 1. Fetch static data (Rooms/Seats/Menu)
     await Promise.all([
       loadRooms(),
       loadSeats(),
       loadMenu(),
     ])
-
-    // 2. Sync their Cloud State (Remote Persistence)
     const session = await loadMySession(userId)
-    
-    // 3. If they are currently sitting in a seat, fetch their tab
-    if (session?.id) {
-      await loadMyOrders(session.id)
-    }
+    if (session?.id) await loadMyOrders(session.id)
   }, [loadRooms, loadSeats, loadMenu, loadMySession, loadMyOrders])
 
   return {
+    // Loaders
     loadRooms,
     loadSeats,
     loadMenu,
@@ -283,6 +302,7 @@ export function useKayan() {
     loadPendingOrders,
     loadMySession,
     loadMyOrders,
+    // Admin actions
     handleToggleSeat,
     getSessionBySeat,
     handleMoveSeat,
@@ -290,7 +310,9 @@ export function useKayan() {
     handleCheckout,
     getLiveBill,
     handleUpdateOrderStatus,
+    // Customer actions
     handlePlaceOrder,
+    // Bootstrap
     bootstrapAdmin,
     bootstrapCustomer,
   }

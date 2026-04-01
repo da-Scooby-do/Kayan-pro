@@ -30,10 +30,35 @@ export default function CustomerBill() {
     if (mySession?.id) loadMyOrders(mySession.id)
   }, [mySession?.id]) // eslint-disable-line react-hooks/exhaustive-deps
 
-  // Poll the live bill every 90s
+  // Poll the live bill every 90s — fall back to client-side calc if RPC fails
   useEffect(() => {
     if (!mySession?.id) return
-    const refresh = () => getLiveBill(mySession.id).then(b => setLiveBill(b))
+
+    const refresh = async () => {
+      // Try DB function first (most accurate)
+      const dbBill = await getLiveBill(mySession.id)
+      if (dbBill) {
+        setLiveBill(dbBill)
+      } else {
+        // Fallback: compute client-side so "Calculating..." never hangs
+        const pkg   = mySession.package ?? {}
+        const rate  = pkg.hourly_rate ?? 15
+        const cap   = pkg.daily_cap   ?? 75
+        const capH  = pkg.cap_hours   ?? 6
+        const hours = (Date.now() - new Date(mySession.check_in)) / 3_600_000
+        const capped = hours > capH
+        const stay  = capped ? cap : Math.max(rate, Math.ceil(hours * rate))
+        const orders = mySession.orders_total ?? 0
+        setLiveBill({
+          hours_stayed:  +hours.toFixed(2),
+          stay_cost:     stay,
+          orders_total:  orders,
+          total_cost:    stay + orders,
+          is_capped:     capped,
+        })
+      }
+    }
+
     refresh()
     const t = setInterval(refresh, 90_000)
     return () => clearInterval(t)
@@ -62,14 +87,14 @@ export default function CustomerBill() {
   const seatNum   = mySession.seat?.seat_number
 
   const billRows = bill ? [
-    { label: 'Stay duration',   value: `${bill.hours_stayed}h`                        },
+    { label: 'Stay duration',   value: `${bill.hours_stayed}h`                       },
     { label: 'Hourly rate',     value: `${pkg.hourly_rate ?? BILLING.HOURLY_RATE} EGP/hr` },
     { label: 'Stay cost',       value: `${bill.stay_cost} EGP`,
       note: bill.is_capped ? '(capped ✓)' : null, noteColor: '#22C55E'               },
     { label: 'Drinks & snacks', value: `${bill.orders_total} EGP`                      },
     { divider: true },
     { label: 'Total',           value: `${bill.total_cost} EGP`,
-      bold: true, valueColor: '#C9A84C'                                               },
+      bold: true, valueColor: '#C9A84C'                                              },
   ] : []
 
   return (
@@ -80,9 +105,7 @@ export default function CustomerBill() {
       </div>
 
       {/* Active session card */}
-      <div
-     className="glass rounded-2xl border border-kayan-border p-6 card-hover"
-      >
+      <div className="glass rounded-2xl border border-kayan-border p-6 mb-4 card-hover">
         {/* Session status */}
         <div className="flex items-center justify-between mb-5">
           <div className="flex items-center gap-2">
@@ -210,8 +233,8 @@ export default function CustomerBill() {
         <div className="grid grid-cols-2 gap-2 text-xs">
           {[
             { label: 'Hourly rate',      value: `${BILLING.HOURLY_RATE} EGP/hr` },
-            { label: 'Daily cap',        value: `${BILLING.DAILY_CAP} EGP`       },
-            { label: 'Cap applies after',value: `${BILLING.CAP_HOURS} hours`     },
+            { label: 'Daily cap',        value: `${BILLING.DAILY_CAP} EGP`      },
+            { label: 'Cap applies after',value: `${BILLING.CAP_HOURS} hours`    },
             { label: 'Orders',           value: 'Billed to tab'                 },
           ].map(x => (
             <div key={x.label}>
