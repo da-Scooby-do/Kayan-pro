@@ -1,5 +1,6 @@
 import React, { useState } from 'react'
 import { useAuth } from '@/hooks/useAuth'
+import kayanLogo from '@/assets/kayan-logo.png' // <-- Added import
 
 export default function SignUpView({ onSwitch }) {
   const [email, setEmail] = useState('')
@@ -15,8 +16,13 @@ export default function SignUpView({ onSwitch }) {
   }
 
   return (
-    <div className="fu w-full max-w-md space-y-8 text-center relative z-10">
+    <div className="w-full max-w-md space-y-8 text-center relative z-10">
+      
+      {/* Imported Logo Image */}
+      <img src={kayanLogo} alt="Kayan Logo" className="w-32 h-auto mx-auto mb-4" />
+      
       <h1 className="font-display text-5xl font-bold mb-2 tracking-tighter text-kayan-gold">Create Account</h1>
+      
       <form onSubmit={onSubmit} className="glass p-8 rounded-3xl border border-kayan-border space-y-4">
         <input 
           type="text" placeholder="Full Name" value={fullName}
