@@ -36,13 +36,25 @@ export const supabase = createClient(SUPABASE_URL, SUPABASE_ANON, {
  * Creates the auth user; the `handle_new_user` DB trigger
  * automatically inserts the profile row.
  */
-export async function signUp({ email, password, fullName }) {
+export async function signUp({ email, password, fullName, phone }) {
+  // Step 1: create auth user
   const { data, error } = await supabase.auth.signUp({
     email,
     password,
     options: { data: { full_name: fullName, role: 'customer' } },
   })
   if (error) throw error
+
+  // Step 2: update the profile row with phone number
+  // The handle_new_user trigger creates the profile row immediately,
+  // but doesn't include phone — we update it right after signup.
+  if (data?.user?.id && phone) {
+    await supabase
+      .from('profiles')
+      .update({ phone: phone.trim() })
+      .eq('id', data.user.id)
+  }
+
   return data
 }
 
@@ -266,24 +278,12 @@ export async function getSessionCost(sessionId) {
 //  MENU
 // ═══════════════════════════════════════════════════════════
 
-/** Fetch all available menu items (Customer view). */
+/** Fetch all available menu items. */
 export async function fetchMenu() {
   const { data, error } = await supabase
     .from('menu_items')
     .select('*')
     .eq('is_available', true)
-    .order('sort_order')
-  if (error) throw error
-  return data ?? []
-}
-
-/**
- * Admin: Fetch ALL menu items (including out of stock).
- */
-export async function fetchAdminMenu() {
-  const { data, error } = await supabase
-    .from('menu_items')
-    .select('*')
     .order('sort_order')
   if (error) throw error
   return data ?? []
@@ -295,29 +295,19 @@ export async function fetchAdminMenu() {
 
 /**
  * Admin: fetch all pending/preparing orders with customer & room context.
- * Bypasses the view to ensure we get the nested customer profile name.
+ * Uses the pending_orders_view created in the schema.
  */
 export async function fetchPendingOrders() {
   const { data, error } = await supabase
-    .from('orders')
-    .select(`
-      *,
-      item:menu_items(*),
-      session:sessions (
-        seat:seats(seat_number, room_id),
-        profile:profiles(username, full_name) 
-      )
-    `)
-    .in('status', ['pending', 'preparing'])
-    .order('created_at', { ascending: false });
-
-  if (error) throw error;
-  return data ?? [];
+    .from('pending_orders_view')
+    .select('*')
+    .order('created_at')
+  if (error) throw error
+  return data ?? []
 }
 
 /**
  * Fetch all orders belonging to a specific session.
- * Capped to 50 items for speed!
  */
 export async function fetchSessionOrders(sessionId) {
   const { data, error } = await supabase
@@ -325,7 +315,6 @@ export async function fetchSessionOrders(sessionId) {
     .select(`*, item:menu_items ( name, name_ar, emoji, price )`)
     .eq('session_id', sessionId)
     .order('created_at', { ascending: false })
-    .limit(50) // <-- SPEED OPTIMIZATION ADDED HERE
   if (error) throw error
   return data ?? []
 }

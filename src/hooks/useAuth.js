@@ -41,9 +41,9 @@ export function useAuth() {
     }
   }, []) // eslint-disable-line
 
-  const handleSignUp = useCallback(async (email, password, fullName) => {
+  const handleSignUp = useCallback(async (email, password, fullName, phone) => {
     try {
-      await signUp({ email, password, fullName })
+      await signUp({ email, password, fullName, phone })
       showToast('✓ Account created! Check your email to confirm.', 'ok')
     } catch (err) {
       showToast(`Sign up failed: ${err.message}`, 'error')

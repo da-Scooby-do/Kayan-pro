@@ -3,9 +3,7 @@ import { useAuth } from '@/hooks/useAuth'
 import useKayanStore from '@/store/useKayanStore'
 import { supabase } from '@/lib/supabase'
 
-// 1. Keep Auth Views static (They need to load instantly for logged-out users)
-import LoginView    from "@/components/Shared/LoginView"
-import SignUpView   from "@/components/Shared/SignUpView"
+import LoginPage from "@/pages/LoginPage"
 
 // 2. Lazy Load the heavy Dashboards (Code Splitting)
 const AdminLayout    = lazy(() => import("@/components/Admin/AdminLayout"))
@@ -14,7 +12,7 @@ const OwnerLayout    = lazy(() => import("@/components/Owner/OwnerLayout"))
 
 function App() {
   const { user, profile, authLoading, toast } = useKayanStore()
-  const [isSignUp, setIsSignUp] = useState(false)
+  
   const { handleSignOut } = useAuth()
 
   useEffect(() => {
@@ -31,20 +29,7 @@ function App() {
     </div>
   )
 
-  if (!user) return (
-    <div className="min-h-screen bg-kayan-bg">
-      {isSignUp
-        ? <SignUpView onSwitch={() => setIsSignUp(false)} />
-        : <LoginView  onSwitch={() => setIsSignUp(true)}  />
-      }
-      {toast && (
-        <div className="fixed top-4 right-4 glass px-6 py-3 border border-kayan-border
-                        rounded-xl z-[9999] text-xs">
-          {toast.msg}
-        </div>
-      )}
-    </div>
-  )
+  if (!user) return <LoginPage />
 
   if (!profile) return (
     <div className="min-h-screen bg-kayan-bg flex items-center justify-center flex-col gap-4">
@@ -53,7 +38,7 @@ function App() {
       </div>
       <button onClick={() => supabase.auth.signOut()}
         className="text-[9px] text-kayan-muted border border-white/10 px-4 py-2
-                   rounded-lg uppercase tracking-widest hover:text-kayan-sub
+       rounded-lg uppercase tracking-widest hover:text-kayan-sub
                    transition-all cursor-pointer bg-transparent">
         Taking too long? Sign out
       </button>
