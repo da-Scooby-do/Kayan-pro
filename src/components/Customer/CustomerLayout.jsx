@@ -95,7 +95,7 @@ export default function CustomerLayout() {
                          flex items-center justify-between sticky top-0 z-50">
         <div>
           <h1 className="gold-text font-display text-2xl font-bold block leading-none">كيان</h1>
-          <p className="text-[8px] tracking-[3px] text-kayan-gold/40">KAYAN WORKSPACE</p>
+          <p className="text-[8px] tracking-[3px] text-kayan-gold/40">KAYAN · ALEXANDRIA</p>
           {profile?.username && (
             <p className="text-[9px] text-kayan-muted font-mono leading-none mt-0.5">
               {profile.username}

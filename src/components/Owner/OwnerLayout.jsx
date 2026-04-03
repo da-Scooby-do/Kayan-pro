@@ -308,7 +308,7 @@ export default function OwnerLayout() {
             <h1 className="gold-text font-display text-2xl font-bold leading-none block">
               كيان
             </h1>
-            <p className="text-[8px] tracking-[4px] text-kayan-gold/40">OWNER PANEL</p>
+            <p className="text-[8px] tracking-[4px] text-kayan-gold/40">OWNER · KAYAN</p>
           </div>
           {/* Live workspace pulse */}
           <div className="flex items-center gap-2 px-3 py-1.5 rounded-full
@@ -370,7 +370,7 @@ export default function OwnerLayout() {
                 <div>
                   <div className="mb-6">
                     <h2 className="font-display text-2xl font-bold mb-1">Workspace Overview</h2>
-                    <p className="text-kayan-sub text-sm">Live snapshot of كيان operations</p>
+                    <p className="text-kayan-sub text-sm">Live snapshot · Alexandria</p>
                   </div>
 
                   {/* Today stats */}

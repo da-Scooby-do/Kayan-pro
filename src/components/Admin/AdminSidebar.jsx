@@ -26,7 +26,7 @@ export default function AdminSidebar({ activeTab, onTabChange }) {
       {/* Logo */}
       <div className="p-5 pb-4 border-b border-white/[0.05]">
         <p className="text-[8px] tracking-[4px] text-kayan-muted mb-2 uppercase">
-          Admin Panel
+          KAYAN · ADMIN
         </p>
         <h1 className="gold-text font-display text-3xl font-bold block leading-none">
           كيان

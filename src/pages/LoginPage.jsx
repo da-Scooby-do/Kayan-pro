@@ -80,20 +80,26 @@ export default function LoginPage() {
         initial={{ opacity: 0, y: 24 }}
         animate={{ opacity: 1, y: 0  }}
         transition={{ duration: 0.55 }}
-        className="text-center mb-10 relative z-10"
+        className="text-center mb-8 relative z-10 flex flex-col items-center"
       >
-        <p className="text-[9px] tracking-[6px] text-kayan-gold/45 mb-3 uppercase">
-          Premium Workspace · Cairo
+        {/* Real logo image */}
+        <div className="mb-4" style={{ filter: 'drop-shadow(0 0 22px rgba(201,168,76,0.22))' }}>
+          <img
+            src="/kayan-logo.png"
+            alt="Kayan"
+            className="rounded-full object-cover"
+            style={{ width: 110, height: 110 }}
+          />
+        </div>
+
+        <p className="text-[9px] tracking-[6px] text-kayan-gold/45 mb-1 uppercase">
+          Premium Workspace · Alexandria
         </p>
-        <h1 className="gold-text font-display leading-none mb-1"
-            style={{ fontSize: 'clamp(64px, 12vw, 96px)', fontWeight: 700 }}>
-          كيان
-        </h1>
-        <p className="text-kayan-text/40 tracking-[10px] text-sm uppercase font-light">
+        <p className="text-kayan-text/30 tracking-[8px] text-[11px] uppercase font-light">
           K A Y A N
         </p>
         <div className="w-14 h-px bg-gradient-to-r from-transparent via-kayan-gold/50
-                        to-transparent mx-auto mt-5" />
+                        to-transparent mx-auto mt-4" />
       </motion.div>
 
       {/* Auth card */}
