@@ -62,9 +62,16 @@ function StepCustomer({ selected, onSelect }) {
     setSessionStatus(p => ({ ...p, [userId]: s ? 'active' : 'free' }))
   }, [sessionStatus, checkCustomerSession])
 
-  const filtered = customers.filter(c =>
-    !search || c.full_name?.toLowerCase().includes(search.toLowerCase())
-  )
+  const q = search.trim().toLowerCase()
+  const filtered = customers.filter(c => {
+    if (!q) return true
+    return (
+      c.full_name?.toLowerCase().includes(q) ||
+      c.phone?.toLowerCase().includes(q)     ||
+      c.username?.toLowerCase().includes(q)  ||
+      c.id?.toLowerCase().includes(q)
+    )
+  })
 
   return (
     <div>
@@ -74,13 +81,38 @@ function StepCustomer({ selected, onSelect }) {
       </p>
 
       {/* Search */}
-      <input
-        type="text"
-        placeholder="Search by name…"
-        value={search}
-        onChange={e => setSearch(e.target.value)}
-        className="kayan-input mb-4"
-      />
+      <div className="relative mb-4">
+        <input
+          type="text"
+          placeholder="Search by name, phone or ID…"
+          value={search}
+          onChange={e => setSearch(e.target.value)}
+          className="kayan-input pr-8"
+          autoFocus
+        />
+        {search && (
+          <button
+            onClick={() => setSearch('')}
+            className="absolute right-3 top-1/2 -translate-y-1/2 text-kayan-muted
+                       hover:text-kayan-sub transition-colors cursor-pointer
+                       bg-transparent border-none text-sm"
+          >
+            ×
+          </button>
+        )}
+      </div>
+      {/* Search hint chips */}
+      {!search && (
+        <div className="flex gap-2 mb-3 flex-wrap">
+          {['By name', 'By phone', 'By ID (USR-)'].map(hint => (
+            <span key={hint}
+              className="text-[9px] text-kayan-muted bg-white/[0.03]
+                         border border-white/[0.06] rounded-full px-2 py-0.5">
+              {hint}
+            </span>
+          ))}
+        </div>
+      )}
 
       {/* List */}
       <div className="space-y-2 max-h-72 overflow-y-auto pr-1">
@@ -124,12 +156,20 @@ function StepCustomer({ selected, onSelect }) {
                 {(c.full_name ?? 'G')[0].toUpperCase()}
               </div>
 
-            <div className="flex-1 min-w-0">
-  <p className="text-sm font-semibold truncate">{c.full_name}</p>
-  <p className="text-[10px] text-kayan-muted">
-    {c.username ?? c.phone ?? ''}
-  </p>
-</div>
+              <div className="flex-1 min-w-0">
+                <p className="text-sm font-semibold truncate">{c.full_name}</p>
+                <div className="flex items-center gap-2 mt-0.5 flex-wrap">
+                  {c.phone && (
+                    <span className="text-[10px] text-kayan-muted">📱 {c.phone}</span>
+                  )}
+                  {c.username && (
+                    <span className="text-[9px] text-kayan-muted font-mono bg-white/[0.04]
+                                     px-1.5 py-0.5 rounded-md">
+                      {c.username}
+                    </span>
+                  )}
+                </div>
+              </div>
 
               {/* Status chip */}
               <div className="flex-shrink-0">
