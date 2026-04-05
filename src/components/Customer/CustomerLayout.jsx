@@ -1,8 +1,9 @@
 import { useEffect, useState } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
-import CustomerMap  from './CustomerMap'
-import CustomerMenu from './CustomerMenu'
-import CustomerBill from './CustomerBill'
+import CustomerMap          from './CustomerMap'
+import CustomerMenu         from './CustomerMenu'
+import CustomerBill         from './CustomerBill'
+import CustomerSubscription from './CustomerSubscription'
 import { useKayan }                from '@/hooks/useKayan'
 import { useCustomerRealtime,
          useCustomerSessionWatch } from '@/hooks/useRealtime'
@@ -13,9 +14,10 @@ const TABS = [
   { id: 'map',  icon: '🗺', label: 'MAP'  },
   { id: 'menu', icon: '☕', label: 'MENU' },
   { id: 'bill', icon: '🧾', label: 'BILL' },
+  { id: 'sub',  icon: '✦',  label: 'SUB'  },
 ]
 
-const VIEWS = { map: CustomerMap, menu: CustomerMenu, bill: CustomerBill }
+const VIEWS = { map: CustomerMap, menu: CustomerMenu, bill: CustomerBill, sub: CustomerSubscription }
 
 function Shimmer({ className = '' }) {
   return <div className={`rounded-xl bg-white/[0.04] animate-pulse ${className}`} />

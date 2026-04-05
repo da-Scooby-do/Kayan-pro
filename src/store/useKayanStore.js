@@ -125,6 +125,14 @@ const useKayanStore = create(
   menu: [],
   setMenu: (menu) => set({ menu }),
 
+  // ── Subscriptions ─────────────────────────────────────────
+  mySubscription:     null,
+  subscriptionPlans:  [],
+  customerSubs:       [],   // admin view
+  setMySubscription:    (s) => set({ mySubscription: s }),
+  setSubscriptionPlans: (p) => set({ subscriptionPlans: p }),
+  setCustomerSubs:      (c) => set({ customerSubs: c }),
+
   // ── Toast ─────────────────────────────────────────────────
   toast: null,
   _toastTimer: null,
@@ -149,6 +157,7 @@ const useKayanStore = create(
     customers: [], menu: [], toast: null,
     hasNewOrder: false, sessionsLoading: false,
     ordersLoading: false, myOrdersLoading: false,
+    mySubscription: null, customerSubs: [],
   }),
 
 })))

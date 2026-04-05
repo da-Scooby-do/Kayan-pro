@@ -27,6 +27,11 @@ import {
   toggleSeatOccupancy,
   fetchSessionBySeat,
   moveSessionSeat,
+  fetchSubscriptionPlans,
+  fetchMySubscription,
+  activateSubscription,
+  fetchCustomerSubscriptions,
+  cancelSubscription,
 } from '@/lib/supabase'
 import useKayanStore from '@/store/useKayanStore'
 
@@ -267,6 +272,60 @@ export function useKayan() {
     }
   }, [loadSeats]) // eslint-disable-line react-hooks/exhaustive-deps
 
+  // ── Subscriptions ────────────────────────────────────────
+
+  const loadSubscriptionPlans = useCallback(async () => {
+    try {
+      const plans = await fetchSubscriptionPlans()
+      store.setSubscriptionPlans(plans)
+      return plans
+    } catch (err) {
+      store.showToast(`Failed to load plans: ${err.message}`, 'error')
+    }
+  }, []) // eslint-disable-line
+
+  const loadMySubscription = useCallback(async (userId) => {
+    try {
+      const sub = await fetchMySubscription(userId)
+      store.setMySubscription(sub)
+      return sub
+    } catch (err) {
+      store.showToast(`Could not load subscription: ${err.message}`, 'error')
+    }
+  }, []) // eslint-disable-line
+
+  const loadCustomerSubs = useCallback(async () => {
+    try {
+      const subs = await fetchCustomerSubscriptions()
+      store.setCustomerSubs(subs)
+      return subs
+    } catch (err) {
+      store.showToast(`Failed to load subscriptions: ${err.message}`, 'error')
+    }
+  }, []) // eslint-disable-line
+
+  const handleActivateSub = useCallback(async ({ userId, planId, notes }) => {
+    try {
+      await activateSubscription({ userId, planId, adminId: store.profile?.id, notes })
+      await loadCustomerSubs()
+      store.showToast('✓ Subscription activated!', 'ok')
+    } catch (err) {
+      store.showToast(`Activation failed: ${err.message}`, 'error')
+      throw err
+    }
+  }, [loadCustomerSubs]) // eslint-disable-line
+
+  const handleCancelSub = useCallback(async (subId) => {
+    try {
+      await cancelSubscription(subId)
+      await loadCustomerSubs()
+      store.showToast('Subscription cancelled.', 'info')
+    } catch (err) {
+      store.showToast(`Cancel failed: ${err.message}`, 'error')
+      throw err
+    }
+  }, [loadCustomerSubs]) // eslint-disable-line
+
   // ── Bootstrap helpers ───────────────────────────────────────
 
 
@@ -286,10 +345,12 @@ export function useKayan() {
       loadRooms(),
       loadSeats(),
       loadMenu(),
+      loadSubscriptionPlans(),
+      loadMySubscription(userId),
     ])
     const session = await loadMySession(userId)
     if (session?.id) await loadMyOrders(session.id)
-  }, [loadRooms, loadSeats, loadMenu, loadMySession, loadMyOrders])
+  }, [loadRooms, loadSeats, loadMenu, loadMySession, loadMyOrders, loadSubscriptionPlans, loadMySubscription]) // eslint-disable-line
 
   return {
     // Loaders
@@ -312,6 +373,12 @@ export function useKayan() {
     handleUpdateOrderStatus,
     // Customer actions
     handlePlaceOrder,
+    // Subscriptions
+    loadSubscriptionPlans,
+    loadMySubscription,
+    loadCustomerSubs,
+    handleActivateSub,
+    handleCancelSub,
     // Bootstrap
     bootstrapAdmin,
     bootstrapCustomer,

@@ -459,3 +459,53 @@ export async function moveSessionSeat(sessionId, newSeatId, adminId) {
   if (error) throw error
   return data
 }
+
+// ═══════════════════════════════════════════════════════════
+//  SUBSCRIPTIONS
+// ═══════════════════════════════════════════════════════════
+
+export async function fetchSubscriptionPlans() {
+  const { data, error } = await supabase
+    .from('subscription_plans')
+    .select('*')
+    .eq('is_active', true)
+    .order('sort_order')
+  if (error) throw error
+  return data ?? []
+}
+
+export async function fetchMySubscription(userId) {
+  const { data, error } = await supabase
+    .rpc('get_active_subscription', { p_user_id: userId })
+  if (error) throw error
+  return data?.[0] ?? null
+}
+
+export async function activateSubscription({ userId, planId, adminId, notes }) {
+  const { data, error } = await supabase.rpc('activate_subscription', {
+    p_user_id:  userId,
+    p_plan_id:  planId,
+    p_admin_id: adminId ?? null,
+    p_notes:    notes ?? null,
+  })
+  if (error) throw error
+  return data
+}
+
+export async function fetchCustomerSubscriptions() {
+  const { data, error } = await supabase
+    .from('customer_subscriptions_view')
+    .select('*')
+  if (error) throw error
+  return data ?? []
+}
+
+export async function cancelSubscription(subId) {
+  const { data, error } = await supabase
+    .from('user_subscriptions')
+    .update({ status: 'cancelled', updated_at: new Date().toISOString() })
+    .eq('id', subId)
+    .select().single()
+  if (error) throw error
+  return data
+}

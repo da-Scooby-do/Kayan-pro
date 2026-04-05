@@ -78,6 +78,18 @@ export default function CheckoutModal({ session, onClose, onSuccess }) {
             </p>
           </div>
 
+          {/* Subscription badge */}
+          {session?.is_subscription_session && (
+            <div className="flex items-center gap-2 p-3 rounded-xl mb-4
+                            bg-kayan-gold/[0.07] border border-kayan-gold/25">
+              <span className="text-kayan-gold text-base">✦</span>
+              <div>
+                <p className="text-xs font-semibold text-kayan-gold">Subscription Active</p>
+                <p className="text-[10px] text-kayan-muted">Stay is covered — orders only</p>
+              </div>
+            </div>
+          )}
+
           {/* Bill rows */}
           {fetching ? (
             <div className="text-center py-8 text-kayan-muted text-sm">

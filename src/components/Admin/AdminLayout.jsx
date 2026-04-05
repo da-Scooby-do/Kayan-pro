@@ -1,20 +1,20 @@
 import { useEffect, useState } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
-import AdminSidebar  from './AdminSidebar'
-import AdminOrders   from './AdminOrders'
-import AdminSeats    from './AdminSeats'
-import AdminSessions from './AdminSessions'
+import AdminSidebar       from './AdminSidebar'
+import AdminOrders        from './AdminOrders'
+import AdminSeats         from './AdminSeats'
+import AdminSessions      from './AdminSessions'
+import AdminSubscriptions from './AdminSubscriptions'
 import { useKayan }        from '@/hooks/useKayan'
 import { useAdminRealtime } from '@/hooks/useRealtime'
 import useKayanStore        from '@/store/useKayanStore'
 import { supabase }         from '@/lib/supabase'
-import AdminMenu from './AdminMenu'
 
 const VIEWS = {
-  orders:   AdminOrders,
-  seats:    AdminSeats,
-  sessions: AdminSessions,
-  menu:     AdminMenu,
+  orders:        AdminOrders,
+  seats:         AdminSeats,
+  sessions:      AdminSessions,
+  subscriptions: AdminSubscriptions,
 }
 
 // ── Admin presence heartbeat ──────────────────────────────────

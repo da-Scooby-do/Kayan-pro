@@ -157,7 +157,13 @@ function StepCustomer({ selected, onSelect }) {
               </div>
 
               <div className="flex-1 min-w-0">
-                <p className="text-sm font-semibold truncate">{c.full_name}</p>
+                <div className="flex items-center gap-2">
+                  <p className="text-sm font-semibold truncate">{c.full_name}</p>
+                  {c.sub_status === 'active' && (
+                    <span className="text-[8px] font-bold text-kayan-bg bg-kayan-gold
+                                     px-1.5 py-0.5 rounded-full flex-shrink-0">✦ SUB</span>
+                  )}
+                </div>
                 <div className="flex items-center gap-2 mt-0.5 flex-wrap">
                   {c.phone && (
                     <span className="text-[10px] text-kayan-muted">📱 {c.phone}</span>
@@ -166,6 +172,11 @@ function StepCustomer({ selected, onSelect }) {
                     <span className="text-[9px] text-kayan-muted font-mono bg-white/[0.04]
                                      px-1.5 py-0.5 rounded-md">
                       {c.username}
+                    </span>
+                  )}
+                  {c.sub_days_remaining > 0 && (
+                    <span className="text-[9px] text-kayan-gold">
+                      {c.sub_days_remaining}d left
                     </span>
                   )}
                 </div>
