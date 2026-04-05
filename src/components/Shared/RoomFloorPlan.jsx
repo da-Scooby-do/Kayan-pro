@@ -1,402 +1,520 @@
 import { motion } from 'framer-motion'
 
 // ─────────────────────────────────────────────────────────────
-//  Room Layout Definitions
-//  Each seat array index = seat_number - 1
-//  Positions are [x, y] in pixels within the room container
-//  Furniture: { type, x, y, w, h, label? }
-//    types: 'table' | 'counter' | 'screen' | 'wall-bar'
+//  Reusable primitives
 // ─────────────────────────────────────────────────────────────
 
-const ROOM_LAYOUTS = {
+/** A single bookable seat button */
+function Seat({ number, occupied, isAdmin, onClick }) {
+  const base =
+    'w-8 h-8 rounded-lg text-[10px] font-bold flex items-center justify-center ' +
+    'border transition-all duration-150 select-none flex-shrink-0'
 
-  // ══════════════════════════════════════════════════════
-  //  SILENT 1  (Room 1 — 12 seats)
-  //  - Door top-left
-  //  - Top counter bar → seats 1, 2
-  //  - Right wall bar  → seats 3, 4, 5, 6
-  //  - Left wall bar   → seats 7, 8, 9, 10
-  //  - Center table    → seats 11, 12
-  // ══════════════════════════════════════════════════════
-  1: {
-    w: 500, h: 380,
-    door: { x: 10, y: 10, label: 'باب', side: 'top-left' },
-    furniture: [
-      { type: 'counter',  x: 55, y: 18, w: 230, h: 26,  label: 'Counter' },
-      { type: 'wall-bar', x: 16, y: 72, w: 26,  h: 230 },
-      { type: 'wall-bar', x: 420, y: 56, w: 26, h: 240 },
-      { type: 'table',   x: 148, y: 210, w: 200, h: 120, label: 'Table' },
-    ],
-    seats: [
-      [108, 62],   // 1
-      [190, 62],   // 2
-      [392, 75],   // 3
-      [392, 130],  // 4
-      [392, 185],  // 5
-      [392, 240],  // 6
-      [62,  90],   // 7
-      [62,  145],  // 8
-      [62,  200],  // 9
-      [62,  255],  // 10
-      [218, 180],  // 11 — above table
-      [218, 348],  // 12 — below table
-    ],
-  },
+  const style = occupied
+    ? 'bg-red-500/15 border-red-500/45 text-red-400 shadow-[0_0_7px_rgba(239,68,68,0.15)]'
+    : 'bg-green-500/12 border-green-500/45 text-green-400 shadow-[0_0_7px_rgba(34,197,94,0.12)]'
 
-  // ══════════════════════════════════════════════════════
-  //  SILENT 2  (Room 2 — 15 seats)
-  //  - Door bottom-left
-  //  - Left big table  → seats 6-10
-  //  - Right table     → seats 2-5, 11, 12
-  //  - Extra singles   → 13, 14, 15
-  //  - Seat 1 (single corner)
-  // ══════════════════════════════════════════════════════
-  2: {
-    w: 520, h: 420,
-    door: { x: 10, y: 380, label: 'باب', side: 'bottom-left' },
-    furniture: [
-      { type: 'table', x: 30,  y: 80,  w: 195, h: 240, label: 'Table L' },
-      { type: 'table', x: 290, y: 80,  w: 175, h: 195, label: 'Table R' },
-    ],
-    seats: [
-      [462, 360],  // 1 — corner single
-      [325, 305],  // 2 — right table bottom-L
-      [425, 305],  // 3 — right table bottom-R
-      [325, 62],   // 4 — right table top-L
-      [425, 62],   // 5 — right table top-R
-      [65,  345],  // 6 — left table bottom-L
-      [165, 345],  // 7 — left table bottom-R
-      [65,  62],   // 8 — left table top-L
-      [165, 62],   // 9 — left table top-R
-      [12,  195],  // 10 — left table left-mid
-      [243, 130],  // 11 — left table right-top
-      [243, 195],  // 12 — left table right-mid
-      [243, 260],  // 13 — left table right-bot
-      [479, 130],  // 14 — right table right-top
-      [479, 235],  // 15 — right table right-bot
-    ],
-  },
+  const cursor = isAdmin ? 'cursor-pointer' : 'cursor-default'
+  const hover  = isAdmin && !occupied
+    ? 'hover:bg-green-500/28 hover:scale-110'
+    : isAdmin && occupied
+      ? 'hover:bg-red-500/28 hover:scale-110'
+      : ''
 
-  // ══════════════════════════════════════════════════════
-  //  SILENT 3  (Room 3 — 12 seats)
-  //  - Door left side
-  //  - One long double-row table running across
-  //  - Front row: seats 1-5 (facing the table)
-  //  - Back row:  seats 6-12 (behind)
-  // ══════════════════════════════════════════════════════
-  3: {
-    w: 520, h: 280,
-    door: { x: 10, y: 120, label: 'باب', side: 'left' },
-    furniture: [
-      { type: 'table', x: 55, y: 88, w: 410, h: 100, label: 'Long Table' },
-    ],
-    seats: [
-      [95,  62],   // 1 — front row
-      [170, 62],   // 2
-      [245, 62],   // 3
-      [320, 62],   // 4
-      [395, 62],   // 5
-      [85,  208],  // 6 — back row
-      [148, 208],  // 7
-      [211, 208],  // 8
-      [274, 208],  // 9
-      [337, 208],  // 10
-      [400, 208],  // 11
-      [463, 208],  // 12
-    ],
-  },
+  return (
+    <motion.button
+      whileTap={isAdmin ? { scale: 0.88 } : {}}
+      onClick={() => isAdmin && onClick?.()}
+      className={`${base} ${style} ${cursor} ${hover}`}
+      title={`Seat ${number} · ${occupied ? 'Occupied' : 'Available'}`}
+    >
+      {number}
+    </motion.button>
+  )
+}
 
-  // ══════════════════════════════════════════════════════
-  //  GIRLS ROOM  (Room 4 — 18 seats)
-  //  Individual desks/computers in rows
-  //  3 columns × 5 rows + 3 extra at back counter
-  // ══════════════════════════════════════════════════════
-  4: {
-    w: 480, h: 460,
-    door: { x: 10, y: 20, label: 'باب', side: 'top-left' },
-    furniture: [
-      { type: 'desk', x: 48,  y: 60,  w: 60, h: 45 },
-      { type: 'desk', x: 208, y: 60,  w: 60, h: 45 },
-      { type: 'desk', x: 368, y: 60,  w: 60, h: 45 },
-      { type: 'desk', x: 48,  y: 150, w: 60, h: 45 },
-      { type: 'desk', x: 208, y: 150, w: 60, h: 45 },
-      { type: 'desk', x: 368, y: 150, w: 60, h: 45 },
-      { type: 'desk', x: 48,  y: 240, w: 60, h: 45 },
-      { type: 'desk', x: 208, y: 240, w: 60, h: 45 },
-      { type: 'desk', x: 368, y: 240, w: 60, h: 45 },
-      { type: 'desk', x: 48,  y: 330, w: 60, h: 45 },
-      { type: 'desk', x: 208, y: 330, w: 60, h: 45 },
-      { type: 'desk', x: 368, y: 330, w: 60, h: 45 },
-      { type: 'counter', x: 30, y: 410, w: 420, h: 28 },
-    ],
-    seats: [
-      [78,  118],  // 1
-      [238, 118],  // 2
-      [398, 118],  // 3
-      [78,  208],  // 4
-      [238, 208],  // 5
-      [398, 208],  // 6
-      [78,  298],  // 7
-      [238, 298],  // 8
-      [398, 298],  // 9
-      [78,  388],  // 10
-      [238, 388],  // 11
-      [398, 388],  // 12
-      [95,  452],  // 13 — front counter
-      [210, 452],  // 14
-      [325, 452],  // 15
-      [428, 160],  // 16 — right side
-      [428, 248],  // 17
-      [428, 336],  // 18
-    ],
-  },
+/** A table surface block */
+function Table({ children, className = '' }) {
+  return (
+    <div
+      className={`rounded-lg border border-kayan-gold/22 bg-kayan-gold/[0.07] flex items-center justify-center ${className}`}
+    />
+  )
+}
 
-  // ══════════════════════════════════════════════════════
-  //  DISCUSSION 1  (Room 5 — 15 seats)
-  //  - Multiple table clusters
-  //  - Left cluster: big table, seats around it
-  //  - Right cluster: second table
-  //  - Bottom bar: 3 seats
-  //  - Door bottom-left
-  // ══════════════════════════════════════════════════════
-  5: {
-    w: 560, h: 460,
-    door: { x: 10, y: 420, label: 'باب', side: 'bottom-left' },
-    furniture: [
-      { type: 'table', x: 40,  y: 60,  w: 220, h: 260, label: 'Table 1' },
-      { type: 'table', x: 320, y: 60,  w: 180, h: 200, label: 'Table 2' },
-      { type: 'counter', x: 40, y: 390, w: 480, h: 28 },
-    ],
-    seats: [
-      [95,  422],  // 1  — bottom bar
-      [195, 422],  // 2
-      [295, 422],  // 3
-      [88,  340],  // 4  — left table bottom-L
-      [210, 340],  // 5  — left table bottom-R
-      [88,  42],   // 6  — left table top-L
-      [155, 42],   // 7  — left table top-M
-      [222, 42],   // 8  — left table top-R
-      [22,  130],  // 9  — left table left-top
-      [22,  195],  // 10 — left table left-mid
-      [22,  260],  // 11 — left table left-bot
-      [278, 160],  // 12 — left table right-top
-      [278, 260],  // 13 — left table right-bot
-      [360, 42],   // 14 — right table top-L
-      [450, 42],   // 15 — right table top-R
-    ],
-  },
-
-  // ══════════════════════════════════════════════════════
-  //  DISCUSSION 2  (Room 7 — 12 seats)
-  //  - Top bar with 3 seats
-  //  - Left: screen/whiteboard + seats
-  //  - Right: individual monitor seats
-  //  - Bottom counter: 3 seats
-  // ══════════════════════════════════════════════════════
-  7: {
-    w: 500, h: 420,
-    door: { x: 10, y: 380, label: 'باب', side: 'bottom-left' },
-    furniture: [
-      { type: 'screen',  x: 30,  y: 18,  w: 440, h: 30, label: '— Whiteboard —' },
-      { type: 'table',   x: 30,  y: 90,  w: 200, h: 160, label: 'Table' },
-      { type: 'desk',    x: 310, y: 90,  w: 65,  h: 55 },
-      { type: 'desk',    x: 400, y: 90,  w: 65,  h: 55 },
-      { type: 'desk',    x: 310, y: 190, w: 65,  h: 55 },
-      { type: 'desk',    x: 400, y: 190, w: 65,  h: 55 },
-      { type: 'counter', x: 30,  y: 330, w: 440, h: 28 },
-    ],
-    seats: [
-      [110, 362],  // 1  — bottom counter
-      [225, 362],  // 2
-      [340, 362],  // 3
-      [75,  70],   // 4  — above table top-L
-      [175, 70],   // 5  — above table top-R
-      [15,  140],  // 6  — left of table top
-      [15,  215],  // 7  — left of table bot
-      [248, 140],  // 8  — right of table top
-      [248, 215],  // 9  — right of table bot
-      [342, 162],  // 10 — desk row right-top
-      [432, 162],  // 11
-      [342, 262],  // 12 — desk row right-bot
-    ],
-  },
-
-  // ══════════════════════════════════════════════════════
-  //  ROOF  (Room 6 — 18 seats)
-  //  - Open terrace area, scattered tables
-  //  - Seating section bottom-right
-  //  - Some scattered individual tables top area
-  // ══════════════════════════════════════════════════════
-  6: {
-    w: 600, h: 480,
-    door: { x: 10, y: 440, label: 'باب', side: 'bottom-left' },
-    furniture: [
-      // Scattered terrace tables (decorative)
-      { type: 'table', x: 30,  y: 30,  w: 80, h: 60,  label: '' },
-      { type: 'table', x: 200, y: 20,  w: 90, h: 65,  label: '' },
-      { type: 'table', x: 390, y: 30,  w: 75, h: 60,  label: '' },
-      { type: 'table', x: 100, y: 160, w: 85, h: 65,  label: '' },
-      { type: 'table', x: 280, y: 170, w: 90, h: 65,  label: '' },
-      // Main seating section bottom-right
-      { type: 'table', x: 350, y: 290, w: 220, h: 160, label: 'Seating Area' },
-    ],
-    seats: [
-      // Bottom-right seating area — seats 1-10
-      [365, 462],  // 1
-      [415, 462],  // 2
-      [465, 462],  // 3
-      [515, 462],  // 4
-      [565, 462],  // 5
-      [330, 380],  // 6
-      [330, 340],  // 7
-      [330, 300],  // 8
-      [575, 380],  // 9
-      [575, 340],  // 10
-      // Scattered terrace seats
-      [50,  108],  // 11
-      [105, 108],  // 12
-      [220, 100],  // 13
-      [270, 100],  // 14
-      [408, 105],  // 15
-      [458, 105],  // 16
-      [120, 240],  // 17
-      [300, 250],  // 18
-    ],
-  },
+/** Gap spacer */
+function Gap({ size = 8 }) {
+  return <div style={{ width: size, height: size, flexShrink: 0 }} />
 }
 
 // ─────────────────────────────────────────────────────────────
-//  Furniture color map
+//  Room layouts
 // ─────────────────────────────────────────────────────────────
-const FURNITURE_STYLE = {
-  'table':    { bg: 'rgba(201,168,76,0.08)',  border: 'rgba(201,168,76,0.25)' },
-  'counter':  { bg: 'rgba(255,255,255,0.06)', border: 'rgba(255,255,255,0.15)' },
-  'wall-bar': { bg: 'rgba(255,255,255,0.07)', border: 'rgba(255,255,255,0.18)' },
-  'desk':     { bg: 'rgba(129,140,248,0.10)', border: 'rgba(129,140,248,0.28)' },
-  'screen':   { bg: 'rgba(34,197,94,0.08)',   border: 'rgba(34,197,94,0.3)'   },
+
+function Silent1({ seatMap, isAdmin, onSeat }) {
+  const S = (n) => (
+    <Seat
+      key={n} number={n}
+      occupied={seatMap[n]?.is_occupied ?? false}
+      isAdmin={isAdmin}
+      onClick={() => onSeat(seatMap[n])}
+    />
+  )
+
+  return (
+    <div className="flex flex-col gap-3 p-2">
+
+      {/* ── Top section: top-wall table + right-wall table ── */}
+      <div className="flex items-start gap-3">
+
+        {/* Left column: door space + left-wall table */}
+        <div className="flex flex-col items-center gap-1" style={{ marginTop: 0 }}>
+          {/* Door label */}
+          <div className="text-[8px] text-kayan-gold/50 border border-kayan-gold/20
+                          bg-kayan-gold/[0.06] px-1.5 py-0.5 rounded-sm mb-1">
+            باب
+          </div>
+          {/* Left-wall table: seats 7-11 face right */}
+          <div className="flex flex-col items-end gap-1">
+            {[7,8,9,10,11].map(n => (
+              <div key={n} className="flex items-center gap-1">
+                {S(n)}
+                <div className="w-12 rounded border border-kayan-gold/22 bg-kayan-gold/[0.07]" style={{ height: 34 }} />
+              </div>
+            ))}
+          </div>
+        </div>
+
+        {/* Center column */}
+        <div className="flex flex-col gap-3 flex-1">
+
+          {/* Top-wall table: seats 1, 2 face down */}
+          <div className="flex flex-col items-start gap-1">
+            <Table className="w-36 h-7" />
+            <div className="flex gap-3 pl-2">
+              {S(1)}{S(2)}
+            </div>
+          </div>
+
+          {/* Center island table */}
+          <div className="flex flex-col items-center gap-1 mt-4">
+            {/* Seats above table */}
+            <div className="flex gap-4 justify-center">
+              {S(12)}{S(13)}{S(14)}
+            </div>
+            <Table className="w-52 h-14" />
+            {/* Seats below table */}
+            <div className="flex gap-4 justify-center">
+              {S(15)}{S(16)}{S(17)}
+            </div>
+          </div>
+
+        </div>
+
+        {/* Right-wall table: seats 3-6 face left */}
+        <div className="flex flex-col items-start gap-1 mt-8">
+          {[3,4,5,6].map(n => (
+            <div key={n} className="flex items-center gap-1">
+              <div className="w-12 rounded border border-kayan-gold/22 bg-kayan-gold/[0.07]" style={{ height: 34 }} />
+              {S(n)}
+            </div>
+          ))}
+        </div>
+
+      </div>
+    </div>
+  )
+}
+
+function Silent2({ seatMap, isAdmin, onSeat }) {
+  const S = (n) => (
+    <Seat key={n} number={n}
+      occupied={seatMap[n]?.is_occupied ?? false}
+      isAdmin={isAdmin} onClick={() => onSeat(seatMap[n])} />
+  )
+
+  return (
+    <div className="flex flex-col gap-4 p-2">
+
+      {/* Top row: top-left small table + top-right large table */}
+      <div className="flex gap-6 justify-start">
+
+        {/* Top-left: seat 10 on top */}
+        <div className="flex flex-col items-center gap-1">
+          {S(10)}
+          <Table className="w-14 h-9" />
+        </div>
+
+        {/* Top-right: seats 4,5 top / 2,3 bottom */}
+        <div className="flex flex-col items-center gap-1 ml-8">
+          <div className="flex gap-2">{S(4)}{S(5)}</div>
+          <Table className="w-24 h-10" />
+          <div className="flex gap-2">{S(2)}{S(3)}</div>
+        </div>
+
+      </div>
+
+      {/* Bottom row: bottom-left large table + bottom-right small table */}
+      <div className="flex gap-6 justify-start items-end mt-2">
+
+        {/* Bottom-left: seats 8,9 top / 6,7 bottom */}
+        <div className="flex flex-col items-center gap-1">
+          <div className="flex gap-2">{S(8)}{S(9)}</div>
+          <Table className="w-24 h-10" />
+          <div className="flex gap-2">{S(6)}{S(7)}</div>
+        </div>
+
+        {/* Bottom-right: seat 1 on top */}
+        <div className="flex flex-col items-center gap-1 ml-8">
+          {S(1)}
+          <Table className="w-14 h-9" />
+        </div>
+
+      </div>
+
+      {/* Door */}
+      <div className="flex justify-center mt-1">
+        <div className="text-[8px] text-kayan-gold/50 border border-kayan-gold/20
+                        bg-kayan-gold/[0.06] px-3 py-0.5 rounded-sm">
+          باب
+        </div>
+      </div>
+
+    </div>
+  )
+}
+
+function Silent3({ seatMap, isAdmin, onSeat }) {
+  const S = (n) => (
+    <Seat key={n} number={n}
+      occupied={seatMap[n]?.is_occupied ?? false}
+      isAdmin={isAdmin} onClick={() => onSeat(seatMap[n])} />
+  )
+
+  return (
+    <div className="flex flex-col gap-4 p-2">
+
+      {/* Door top-left */}
+      <div className="flex items-center gap-2 mb-1">
+        <div className="text-[8px] text-kayan-gold/50 border border-kayan-gold/20
+                        bg-kayan-gold/[0.06] px-1.5 py-0.5 rounded-sm">
+          باب
+        </div>
+      </div>
+
+      {/* Top table: seats 1,2,3,4 on bottom edge */}
+      <div className="flex flex-col items-start gap-1 ml-4">
+        <Table className="h-10" style={{ width: 260 }} />
+        <div className="flex gap-4 pl-4">
+          {S(1)}{S(2)}{S(3)}{S(4)}
+        </div>
+      </div>
+
+      {/* Bottom table: seats 5,6,7,8,9 on top edge */}
+      <div className="flex flex-col items-start gap-1 ml-4 mt-3">
+        <div className="flex gap-3 pl-3">
+          {S(5)}{S(6)}{S(7)}{S(8)}{S(9)}
+        </div>
+        <Table className="h-10" style={{ width: 310 }} />
+      </div>
+
+    </div>
+  )
+}
+
+function GirlsRoom({ seatMap, isAdmin, onSeat }) {
+  const S = (n) => (
+    <Seat key={n} number={n}
+      occupied={seatMap[n]?.is_occupied ?? false}
+      isAdmin={isAdmin} onClick={() => onSeat(seatMap[n])} />
+  )
+
+  return (
+    <div className="flex gap-3 p-2">
+
+      {/* Left: door + bottom-left table */}
+      <div className="flex flex-col justify-between" style={{ minHeight: 280 }}>
+        {/* Door on left wall center */}
+        <div className="flex-1 flex items-center">
+          <div className="text-[8px] text-kayan-gold/50 border border-kayan-gold/20
+                          bg-kayan-gold/[0.06] px-1 py-2 rounded-sm writing-mode-vertical">
+            باب
+          </div>
+        </div>
+        {/* Bottom-left table: seat 1 left, seat 2 right */}
+        <div className="flex items-center gap-1 mt-auto">
+          {S(1)}
+          <Table className="w-16 h-10" />
+          {S(2)}
+        </div>
+      </div>
+
+      {/* Center/Right: top desks + right-wall desks */}
+      <div className="flex-1 flex flex-col justify-between" style={{ minHeight: 280 }}>
+
+        {/* Top wall: 3 standalone desks, seats 3,4,5 */}
+        <div className="flex gap-6 justify-center mb-2">
+          {[3,4,5].map(n => (
+            <div key={n} className="flex flex-col items-center gap-1">
+              <Table className="w-12 h-10" />
+              {S(n)}
+            </div>
+          ))}
+        </div>
+
+        {/* Right wall: 3 standalone desks, seats 6,7,8 — stacked vertically */}
+        <div className="flex flex-col items-end gap-4">
+          {[6,7,8].map(n => (
+            <div key={n} className="flex items-center gap-1">
+              <Table className="w-12 h-10" />
+              {S(n)}
+            </div>
+          ))}
+        </div>
+
+      </div>
+    </div>
+  )
+}
+
+function Discussion1({ seatMap, isAdmin, onSeat }) {
+  const S = (n) => (
+    <Seat key={n} number={n}
+      occupied={seatMap[n]?.is_occupied ?? false}
+      isAdmin={isAdmin} onClick={() => onSeat(seatMap[n])} />
+  )
+
+  return (
+    <div className="flex flex-col gap-3 p-2">
+
+      {/* Top section: left stack + right stack */}
+      <div className="flex gap-6 justify-start">
+
+        {/* Left side: two horizontal tables stacked */}
+        <div className="flex flex-col gap-4">
+          {/* Top-left table: seats 12,13 top / 10,11 bottom */}
+          <div className="flex flex-col items-center gap-1">
+            <div className="flex gap-2">{S(12)}{S(13)}</div>
+            <Table className="w-32 h-10" />
+            <div className="flex gap-2">{S(10)}{S(11)}</div>
+          </div>
+          {/* Bottom-left table: seats 8,9 top / 6,7 bottom */}
+          <div className="flex flex-col items-center gap-1">
+            <div className="flex gap-2">{S(8)}{S(9)}</div>
+            <Table className="w-32 h-10" />
+            <div className="flex gap-2">{S(6)}{S(7)}</div>
+          </div>
+        </div>
+
+        {/* Right side: two tables stacked */}
+        <div className="flex flex-col gap-4 ml-6">
+          {/* Top-right smaller table: seat 14 top / 15 bottom */}
+          <div className="flex flex-col items-center gap-1">
+            {S(14)}
+            <Table className="w-24 h-10" />
+            {S(15)}
+          </div>
+          {/* Bottom-right table: seats 16,17 top / 18,19 bottom */}
+          <div className="flex flex-col items-center gap-1">
+            <div className="flex gap-2">{S(16)}{S(17)}</div>
+            <Table className="w-24 h-10" />
+            <div className="flex gap-2">{S(18)}{S(19)}</div>
+          </div>
+        </div>
+
+      </div>
+
+      {/* Bottom wall: long table, seats 1-5 on top edge */}
+      <div className="flex flex-col gap-1 mt-3">
+        <div className="flex gap-3 pl-2">
+          {S(1)}{S(2)}{S(3)}{S(4)}{S(5)}
+        </div>
+        <Table className="h-8" style={{ width: '100%', minWidth: 280 }} />
+      </div>
+
+      {/* Door bottom-left */}
+      <div className="flex justify-start mt-1">
+        <div className="text-[8px] text-kayan-gold/50 border border-kayan-gold/20
+                        bg-kayan-gold/[0.06] px-2 py-0.5 rounded-sm">
+          باب
+        </div>
+      </div>
+
+    </div>
+  )
+}
+
+function Discussion2({ seatMap, isAdmin, onSeat }) {
+  const S = (n) => (
+    <Seat key={n} number={n}
+      occupied={seatMap[n]?.is_occupied ?? false}
+      isAdmin={isAdmin} onClick={() => onSeat(seatMap[n])} />
+  )
+
+  return (
+    <div className="flex flex-col gap-3 p-2">
+
+      {/* Top wall table: seats 6,7,8 facing down */}
+      <div className="flex flex-col items-center gap-1">
+        <Table className="w-52 h-7" />
+        <div className="flex gap-4">{S(6)}{S(7)}{S(8)}</div>
+      </div>
+
+      {/* Middle section: left-wall table + right square tables */}
+      <div className="flex gap-4 justify-between mt-2">
+
+        {/* Left-wall table: seats 4,5 facing right */}
+        <div className="flex items-center gap-1">
+          <div className="flex flex-col gap-2 items-end">
+            {S(4)}{S(5)}
+          </div>
+          <Table className="w-10 h-20" />
+        </div>
+
+        {/* Right center: two small square tables */}
+        <div className="flex gap-3">
+          {/* Left square: seat 9 top, 10 bottom */}
+          <div className="flex flex-col items-center gap-1">
+            {S(9)}
+            <Table className="w-12 h-12" />
+            {S(10)}
+          </div>
+          {/* Right square: seat 11 top, 12 bottom */}
+          <div className="flex flex-col items-center gap-1">
+            {S(11)}
+            <Table className="w-12 h-12" />
+            {S(12)}
+          </div>
+        </div>
+
+      </div>
+
+      {/* Bottom wall table: seats 1,2,3 facing down */}
+      <div className="flex flex-col items-start gap-1 mt-2">
+        <Table className="w-40 h-7" />
+        <div className="flex gap-4 pl-2">{S(1)}{S(2)}{S(3)}</div>
+      </div>
+
+      {/* Door bottom-left */}
+      <div className="flex justify-start mt-1">
+        <div className="text-[8px] text-kayan-gold/50 border border-kayan-gold/20
+                        bg-kayan-gold/[0.06] px-2 py-0.5 rounded-sm">
+          باب
+        </div>
+      </div>
+
+    </div>
+  )
+}
+
+function Roof({ seatMap, isAdmin, onSeat }) {
+  const S = (n) => (
+    <Seat key={n} number={n}
+      occupied={seatMap[n]?.is_occupied ?? false}
+      isAdmin={isAdmin} onClick={() => onSeat(seatMap[n])} />
+  )
+
+  // Decorative scattered table
+  const DecTable = ({ className = '' }) => (
+    <div className={`rounded-md border border-white/[0.08] bg-white/[0.03] ${className}`} />
+  )
+
+  return (
+    <div className="flex flex-col gap-2 p-2">
+
+      {/* ── Main open terrace area (decorative tables) ── */}
+      <div className="rounded-xl border border-white/[0.06] bg-white/[0.015] p-4 mb-2">
+        <p className="text-[8px] text-kayan-muted tracking-widest uppercase mb-3 text-center">
+          Open Terrace Area ☀️
+        </p>
+        <div className="flex gap-4 justify-around flex-wrap">
+          <DecTable className="w-14 h-10" />
+          <DecTable className="w-16 h-10" />
+          <DecTable className="w-14 h-10" />
+          <DecTable className="w-12 h-10" />
+          <DecTable className="w-16 h-10" />
+          <DecTable className="w-14 h-10" />
+        </div>
+      </div>
+
+      {/* ── L-shaped seating extension (bottom-right) ── */}
+      <div className="flex gap-2 justify-end">
+        <div className="rounded-xl border border-kayan-border bg-kayan-gold/[0.03] p-3">
+          <p className="text-[8px] text-kayan-muted tracking-wider uppercase mb-2 text-center">
+            Seating Section
+          </p>
+
+          <div className="flex gap-2">
+
+            {/* Left wall of extension: 10, 9, 8, 1 top to bottom */}
+            <div className="flex flex-col gap-2 items-center border-r border-white/[0.07] pr-2">
+              {S(10)}{S(9)}{S(8)}{S(1)}
+            </div>
+
+            {/* Center: bottom wall 2,3 at the bottom */}
+            <div className="flex flex-col justify-end gap-2 pb-0">
+              <div style={{ flex: 1 }} />
+              <div className="flex flex-col gap-2 items-center border-t border-white/[0.07] pt-2">
+                {S(2)}{S(3)}
+              </div>
+            </div>
+
+            {/* Right wall: 7, 6, 5, 4 top to bottom */}
+            <div className="flex flex-col gap-2 items-center border-l border-white/[0.07] pl-2">
+              {S(7)}{S(6)}{S(5)}{S(4)}
+            </div>
+
+          </div>
+        </div>
+      </div>
+
+    </div>
+  )
 }
 
 // ─────────────────────────────────────────────────────────────
-//  RoomFloorPlan component
+//  Main export — routes to correct room layout
 // ─────────────────────────────────────────────────────────────
 export default function RoomFloorPlan({ roomId, seats = [], isAdmin = false, onSeatClick }) {
-  const layout = ROOM_LAYOUTS[roomId]
+  // Build seat lookup: seat_number → seat object
+  const seatMap = {}
+  seats.forEach(s => { seatMap[s.seat_number] = s })
 
-  // Fallback: unknown room → plain grid
-  if (!layout) {
+  const handleSeat = (seat) => {
+    if (seat && isAdmin) onSeatClick?.(seat)
+  }
+
+  const props = { seatMap, isAdmin, onSeat: handleSeat }
+
+  const ROOMS = {
+    1: <Silent1     {...props} />,
+    2: <Silent2     {...props} />,
+    3: <Silent3     {...props} />,
+    4: <GirlsRoom   {...props} />,
+    5: <Discussion1 {...props} />,
+    6: <Roof        {...props} />,
+    7: <Discussion2 {...props} />,
+  }
+
+  const room = ROOMS[roomId]
+
+  if (!room) {
+    // Fallback plain grid
     return (
-      <div className="flex flex-wrap gap-2">
-        {seats.map(s => (
-          <button key={s.id}
-            onClick={() => isAdmin && onSeatClick?.(s)}
-            className={`seat-btn ${s.is_occupied ? 'seat-occupied' : 'seat-free'} ${!isAdmin ? 'seat-readonly' : ''}`}>
-            {s.seat_number}
-          </button>
+      <div className="flex flex-wrap gap-2 p-2">
+        {seats.sort((a,b)=>a.seat_number-b.seat_number).map(s => (
+          <Seat key={s.id} number={s.seat_number}
+            occupied={s.is_occupied} isAdmin={isAdmin}
+            onClick={() => isAdmin && onSeatClick?.(s)} />
         ))}
       </div>
     )
   }
 
-  const { w, h, furniture, seats: positions, door } = layout
-
-  // Map: seat_number → seat object (from DB)
-  const seatByNumber = {}
-  seats.forEach(s => { seatByNumber[s.seat_number] = s })
-
   return (
-    <div className="overflow-x-auto pb-2">
-      {/* Scale down on mobile */}
-      <div style={{ minWidth: w }}>
-        <div
-          className="relative rounded-2xl border border-kayan-border"
-          style={{
-            width: w, height: h,
-            background: 'rgba(11,11,22,0.6)',
-          }}
-        >
-          {/* Room boundary */}
-          <div className="absolute inset-0 rounded-2xl"
-               style={{ border: '2px solid rgba(201,168,76,0.12)' }} />
-
-          {/* Door indicator */}
-          {door && (
-            <div
-              className="absolute text-[9px] text-kayan-gold/60 font-medium
-                         bg-kayan-gold/10 px-1.5 py-0.5 rounded-sm border border-kayan-gold/20"
-              style={{
-                left: door.x,
-                top:  door.y,
-              }}
-            >
-              {door.label}
-            </div>
-          )}
-
-          {/* Furniture */}
-          {furniture.map((f, i) => {
-            const style = FURNITURE_STYLE[f.type] ?? FURNITURE_STYLE.table
-            return (
-              <div
-                key={i}
-                className="absolute rounded-lg flex items-center justify-center"
-                style={{
-                  left:        f.x,
-                  top:         f.y,
-                  width:       f.w,
-                  height:      f.h,
-                  background:  style.bg,
-                  border:      `1.5px solid ${style.border}`,
-                }}
-              >
-                {f.label && (
-                  <span className="text-[8px] text-kayan-muted tracking-wide select-none">
-                    {f.label}
-                  </span>
-                )}
-              </div>
-            )
-          })}
-
-          {/* Seats */}
-          {positions.map((pos, idx) => {
-            const seatNum = idx + 1
-            const seat    = seatByNumber[seatNum]
-            if (!seat) return null
-
-            const isOcc  = seat.is_occupied
-            const [px, py] = pos
-
-            return (
-              <motion.button
-                key={seat.id}
-                whileHover={isAdmin ? { scale: 1.18 } : {}}
-                whileTap={isAdmin ? { scale: 0.92 } : {}}
-                onClick={() => isAdmin && onSeatClick?.(seat)}
-                title={`Seat ${seatNum} · ${isOcc ? 'Occupied' : 'Available'}`}
-                className={`
-                  absolute select-none
-                  w-8 h-8 rounded-lg text-[10px] font-bold
-                  flex items-center justify-center
-                  border transition-colors duration-150
-                  ${isOcc
-                    ? 'bg-red-500/18 border-red-500/45 text-red-400'
-                    : 'bg-green-500/14 border-green-500/45 text-green-400'
-                  }
-                  ${isAdmin ? 'cursor-pointer' : 'cursor-default'}
-                `}
-                style={{
-                  left: px - 16,   // center on position
-                  top:  py - 16,
-                  boxShadow: isOcc
-                    ? '0 0 8px rgba(239,68,68,0.15)'
-                    : '0 0 8px rgba(34,197,94,0.12)',
-                }}
-              >
-                {seatNum}
-              </motion.button>
-            )
-          })}
-        </div>
+    <div className="w-full overflow-x-auto">
+      <div style={{ minWidth: 300 }}>
+        {room}
       </div>
     </div>
   )
