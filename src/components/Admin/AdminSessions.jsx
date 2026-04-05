@@ -109,7 +109,7 @@ export default function AdminSessions() {
                     <div>
                       <p className="text-base font-semibold">{session.customer_name}</p>
                       <p className="text-xs text-kayan-sub">
-                        {session.room_name} · Seat {session.seat_id?.split('-')[1]}
+                        {session.room_name} · Seat {session.seat_number ?? session.seat_id?.slice(0, 6)}
                       </p>
                       <p className="text-[9px] text-kayan-muted mt-0.5 flex items-center gap-1">
                         <span className="w-1.5 h-1.5 rounded-full bg-green-400 inline-block"

@@ -3,10 +3,11 @@ import useKayanStore from '@/store/useKayanStore'
 import { useAuth } from '@/hooks/useAuth'
 
 const NAV_ITEMS = [
-  { id: 'orders',   icon: '🔔', label: 'Order Queue' },
-  { id: 'seats',    icon: '🪑', label: 'Seat Map'    },
-  { id: 'sessions', icon: '⏱', label: 'Sessions'    },
-  { id: 'menu',     icon: '☕', label: 'Menu Items' },
+  { id: 'orders',        icon: '🔔', label: 'Order Queue'   },
+  { id: 'seats',         icon: '🪑', label: 'Seat Map'      },
+  { id: 'sessions',      icon: '⏱', label: 'Sessions'      },
+  { id: 'subscriptions', icon: '✦',  label: 'Subscriptions' },
+  { id: 'menu',          icon: '☕', label: 'Menu Items'    },
 ]
 
 export default function AdminSidebar({ activeTab, onTabChange }) {

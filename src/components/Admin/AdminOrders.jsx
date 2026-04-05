@@ -95,7 +95,7 @@ export default function AdminOrders() {
                     )}
                   </p>
                   <p className="text-[10px] text-kayan-muted mt-0.5">
-                    {order.room_name} · Seat {order.seat_id?.split('-')[1]}
+                    {order.room_name} · Seat {order.seat_number ?? order.seat_id?.slice(0, 6)}
                   </p>
                 </div>
 

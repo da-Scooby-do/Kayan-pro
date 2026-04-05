@@ -26,6 +26,7 @@ function playNotificationSound() {
 
 export function useAdminRealtime() {
   const { addOrder, patchOrder, patchSeat, setHasNewOrder, showToast } = useKayanStore()
+  const { loadPendingOrders } = useKayan()
   const orderRef   = useRef(null)
   const seatRef    = useRef(null)
   const sessionRef = useRef(null)
@@ -33,11 +34,16 @@ export function useAdminRealtime() {
   useEffect(() => {
     orderRef.current = subscribeToOrders(
       (newOrder) => {
+        // Add raw row immediately for instant count feedback,
+        // then refresh from the view to get enriched display fields
+        // (customer_name, room_name, item_name, total_price, etc.)
         addOrder(newOrder)
         setHasNewOrder(true)
         playNotificationSound()
         showToast(`🔔 New order from ${newOrder.customer_name ?? 'a customer'}`, 'info')
         setTimeout(() => setHasNewOrder(false), 8_000)
+        // Refresh from view after a short delay to get full field set
+        setTimeout(() => loadPendingOrders(), 800)
       },
       (updatedOrder) => { patchOrder(updatedOrder) }
     )

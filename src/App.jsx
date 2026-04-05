@@ -1,6 +1,7 @@
 import React, { useEffect, lazy, Suspense } from 'react'
 import useKayanStore from '@/store/useKayanStore'
 import { supabase } from '@/lib/supabase'
+import { useAuth } from '@/hooks/useAuth'
 import LoginPage from "@/pages/LoginPage"
 
 // Lazy Load the heavy Dashboards (Code Splitting)
@@ -9,7 +10,10 @@ const CustomerLayout = lazy(() => import("@/components/Customer/CustomerLayout")
 const OwnerLayout    = lazy(() => import("@/components/Owner/OwnerLayout"))
 
 function App() {
-  // Cleaned up unused 'toast' and 'handleSignOut' variables to pass Vercel's strict checks
+  // Bootstrap auth — getSession + onAuthStateChange listener
+  // Must be called here so authLoading is resolved before any routing
+  useAuth()
+
   const { user, profile, authLoading } = useKayanStore()
 
   useEffect(() => {

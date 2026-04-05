@@ -303,7 +303,7 @@ function StepSeat({ selectedSeatId, onSelect }) {
           className="text-xs text-kayan-gold mt-4 flex items-center gap-1.5"
         >
           <span className="w-1.5 h-1.5 rounded-full bg-kayan-gold inline-block" />
-          Seat {selectedSeatId.split('-')[1]} selected in {currentRoom?.name}
+          Seat {currentSeats.find(s => s.id === selectedSeatId)?.seat_number ?? '—'} selected in {currentRoom?.name}
         </motion.p>
       )}
     </div>
@@ -311,12 +311,10 @@ function StepSeat({ selectedSeatId, onSelect }) {
 }
 
 // ── Step 3: Confirm ───────────────────────────────────────────
-function StepConfirm({ customer, seatId, rooms, seats }) {
-  // Resolve seat + room names from IDs
-  const [roomId] = seatId?.split('-') ?? []
-  const room     = rooms.find(r => r.id === Number(roomId))
-  const roomSeats = seats[Number(roomId)] ?? []
-  const seat     = roomSeats.find(s => s.id === seatId)
+function StepConfirm({ customer, selectedSeat, rooms }) {
+  // selectedSeat is the full seat object — contains room_id and seat_number directly
+  const room = rooms.find(r => r.id === selectedSeat?.room_id)
+  const seat = selectedSeat
 
   return (
     <div>
@@ -382,23 +380,23 @@ export default function AdminOpenSession({ onClose, onSuccess }) {
     seats:   s.seats,
   }))
 
-  const [step,     setStep]     = useState(1)
-  const [customer, setCustomer] = useState(null)
-  const [seatId,   setSeatId]   = useState(null)
-  const [loading,  setLoading]  = useState(false)
+  const [step,         setStep]         = useState(1)
+  const [customer,     setCustomer]     = useState(null)
+  const [selectedSeat, setSelectedSeat] = useState(null)  // full seat object
+  const [loading,      setLoading]      = useState(false)
 
   // Keep seats fresh while modal is open
   useEffect(() => { loadSeats() }, []) // eslint-disable-line
 
-  const canNext = step === 1 ? !!customer : step === 2 ? !!seatId : true
+  const canNext = step === 1 ? !!customer : step === 2 ? !!selectedSeat : true
 
   const handleConfirm = async () => {
-    if (!customer || !seatId) return
+    if (!customer || !selectedSeat?.id) return
     setLoading(true)
     try {
       await handleOpenSession({
         userId:    customer.id,
-        seatId,
+        seatId:    selectedSeat.id,
         packageId: 1,
         adminId:   profile?.id,
       })
@@ -417,10 +415,10 @@ export default function AdminOpenSession({ onClose, onSuccess }) {
           onSelect={c => { setCustomer(c); setStep(2) }}
         />,
     2: <StepSeat
-          selectedSeatId={seatId}
-          onSelect={s => { setSeatId(s.id); setStep(3) }}
+          selectedSeatId={selectedSeat?.id}
+          onSelect={s => { setSelectedSeat(s); setStep(3) }}
         />,
-    3: <StepConfirm customer={customer} seatId={seatId} rooms={rooms} seats={seats} />,
+    3: <StepConfirm customer={customer} selectedSeat={selectedSeat} rooms={rooms} />,
   }
 
   return (

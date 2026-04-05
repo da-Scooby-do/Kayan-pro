@@ -157,7 +157,7 @@ const useKayanStore = create(
     customers: [], menu: [], toast: null,
     hasNewOrder: false, sessionsLoading: false,
     ordersLoading: false, myOrdersLoading: false,
-    mySubscription: null, customerSubs: [],
+    mySubscription: null, customerSubs: [], subscriptionPlans: [],
   }),
 
 })))

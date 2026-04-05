@@ -188,7 +188,7 @@ function AuditLog({ sessions }) {
           <div className="flex-1 min-w-[140px]">
             <p className="text-xs font-semibold">{s.customer_name}</p>
             <p className="text-[9px] text-kayan-muted">
-              {s.room_name} · Seat {s.seat_id?.split('-')[1]}
+              {s.room_name} · Seat {s.seat_number ?? s.seat_id?.slice(0, 6)}
             </p>
           </div>
           <div className="text-[9px] text-kayan-muted min-w-[100px]">
@@ -428,7 +428,7 @@ export default function OwnerLayout() {
                                       style={{ animation: 'pulse2 2s ease-in-out infinite' }} />
                                 <p className="text-sm font-medium">{s.customer_name}</p>
                                 <p className="text-[10px] text-kayan-muted">
-                                  {s.room_name} · Seat {s.seat_id?.split('-')[1]}
+                                  {s.room_name} · Seat {s.seat_number ?? s.seat_id?.slice(0, 6)}
                                 </p>
                               </div>
                               <div className="flex items-center gap-4">

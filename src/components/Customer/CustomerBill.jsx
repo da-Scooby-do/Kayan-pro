@@ -209,7 +209,7 @@ export default function CustomerBill() {
                 </div>
                 <div className="flex items-center gap-3">
                   <span className="text-sm font-semibold text-kayan-gold">
-                    {order.total_price} EGP
+                    {(order.unit_price * order.quantity)} EGP
                   </span>
                   <span
                     className="status-badge"
