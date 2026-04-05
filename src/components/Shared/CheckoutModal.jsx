@@ -10,12 +10,14 @@ import useKayanStore from '@/store/useKayanStore'
  * @param {Function} onSuccess — called with the checkout result
  */
 export default function CheckoutModal({ session, onClose, onSuccess }) {
-  const { handleCheckout, getLiveBill } = useKayan()
+  const { handleCheckout, getLiveBill, handleRegisterDebt } = useKayan()
   const profile = useKayanStore(s => s.profile)
 
-  const [bill,     setBill]     = useState(null)
-  const [loading,  setLoading]  = useState(false)
-  const [fetching, setFetching] = useState(true)
+  const [bill,        setBill]        = useState(null)
+  const [loading,     setLoading]     = useState(false)
+  const [fetching,    setFetching]    = useState(true)
+  const [debtConfirm, setDebtConfirm] = useState(false)  // two-step debt confirm
+  const [debtLoading, setDebtLoading] = useState(false)
 
   // Fetch live bill from DB function on mount
   useEffect(() => {
@@ -35,6 +37,18 @@ export default function CheckoutModal({ session, onClose, onSuccess }) {
       // error already toasted in hook
     } finally {
       setLoading(false)
+    }
+  }
+
+  const confirmDebt = async () => {
+    setDebtLoading(true)
+    try {
+      const result = await handleRegisterDebt(session.id)
+      onSuccess?.(result)
+    } catch {
+      // error toasted in hook
+    } finally {
+      setDebtLoading(false)
     }
   }
 
@@ -123,24 +137,57 @@ export default function CheckoutModal({ session, onClose, onSuccess }) {
           )}
 
           {/* Actions */}
-          <div className="flex gap-3">
-            <button
-              onClick={onClose}
-              className="btn-ghost flex-1"
-              disabled={loading}
-            >
-              Cancel
-            </button>
-            <button
-              onClick={confirm}
-              disabled={loading || fetching}
-              className="btn-gold flex-[2] disabled:opacity-50"
-            >
-              {loading
-                ? 'Processing…'
-                : `Confirm · ${bill?.total_cost ?? '—'} EGP`}
-            </button>
-          </div>
+          {debtConfirm ? (
+            // ── Debt confirmation step ───────────────────────
+            <div className="rounded-xl bg-orange-500/[0.08] border border-orange-500/25 p-4 mb-4">
+              <p className="text-xs text-orange-300 font-semibold mb-1">⚠ Register as Debt?</p>
+              <p className="text-[10px] text-kayan-muted mb-4 leading-relaxed">
+                {bill?.total_cost ?? '—'} EGP will be added to {session.customer_name}'s
+                tab. The session closes now and the amount is collected next visit.
+              </p>
+              <div className="flex gap-2">
+                <button onClick={() => setDebtConfirm(false)}
+                  className="btn-ghost flex-1 text-xs py-2" disabled={debtLoading}>
+                  Cancel
+                </button>
+                <button onClick={confirmDebt}
+                  disabled={debtLoading}
+                  className="flex-[2] py-2 rounded-xl text-xs font-bold text-orange-300
+                             bg-orange-500/15 border border-orange-500/30
+                             hover:bg-orange-500/25 transition-all cursor-pointer
+                             disabled:opacity-50">
+                  {debtLoading ? 'Registering…' : `Confirm Debt — ${bill?.total_cost ?? '?'} EGP`}
+                </button>
+              </div>
+            </div>
+          ) : (
+            // ── Normal action buttons ──────────────────────
+            <div className="space-y-2">
+              <div className="flex gap-3">
+                <button onClick={onClose} className="btn-ghost flex-1" disabled={loading}>
+                  Cancel
+                </button>
+                <button
+                  onClick={confirm}
+                  disabled={loading || fetching}
+                  className="btn-gold flex-[2] disabled:opacity-50"
+                >
+                  {loading ? 'Processing…' : `Confirm · ${bill?.total_cost ?? '—'} EGP`}
+                </button>
+              </div>
+              {/* Debt option */}
+              <button
+                onClick={() => setDebtConfirm(true)}
+                disabled={loading || fetching}
+                className="w-full py-2.5 rounded-xl text-xs font-medium text-orange-400/80
+                           border border-orange-500/20 bg-orange-500/[0.04]
+                           hover:bg-orange-500/10 hover:border-orange-500/35
+                           transition-all cursor-pointer disabled:opacity-30"
+              >
+                💸 Can't pay now — Register as Debt
+              </button>
+            </div>
+          )}
         </motion.div>
       </motion.div>
     </AnimatePresence>

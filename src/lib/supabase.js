@@ -105,7 +105,7 @@ export async function updateProfile(userId, updates) {
 export async function fetchCustomers() {
   const { data, error } = await supabase
     .from('profiles')
-    .select('id, full_name, phone, role, created_at')
+    .select('id, full_name, phone, role, created_at, username, outstanding_debt')
     .eq('role', 'customer')
     .order('full_name')
   if (error) throw error
@@ -507,5 +507,77 @@ export async function cancelSubscription(subId) {
     .eq('id', subId)
     .select().single()
   if (error) throw error
+  return data
+}
+
+// ═══════════════════════════════════════════════════════════
+//  DEBT SYSTEM
+// ═══════════════════════════════════════════════════════════
+
+export async function registerDebt(sessionId, adminId) {
+  const { data, error } = await supabase.rpc('register_debt', {
+    p_session_id: sessionId,
+    p_admin_id:   adminId ?? null,
+  })
+  if (error) throw error
+  return data
+}
+
+export async function payDebt(userId, adminId) {
+  const { data, error } = await supabase.rpc('pay_debt', {
+    p_user_id:  userId,
+    p_admin_id: adminId ?? null,
+  })
+  if (error) throw error
+  return data
+}
+
+export async function fetchDebts() {
+  const { data, error } = await supabase
+    .from('profiles')
+    .select('id, full_name, username, phone, outstanding_debt')
+    .gt('outstanding_debt', 0)
+    .order('outstanding_debt', { ascending: false })
+  if (error) throw error
+  return data ?? []
+}
+
+// ═══════════════════════════════════════════════════════════
+//  INVITATION SYSTEM
+// ═══════════════════════════════════════════════════════════
+
+export async function useInvitation(inviterId) {
+  const { data, error } = await supabase.rpc('use_invitation', {
+    p_inviter_id: inviterId,
+  })
+  if (error) throw error
+  return data
+}
+
+export async function openInvitationSession({ userId, seatId, packageId = 1, adminId, inviterId }) {
+  const invResult = await useInvitation(inviterId)
+  if (!invResult?.ok) {
+    throw new Error(invResult?.reason ?? 'No invitations remaining')
+  }
+  const { data, error } = await supabase.rpc('open_session', {
+    p_user_id:    userId,
+    p_seat_id:    seatId,
+    p_package_id: packageId,
+    p_admin_id:   adminId ?? null,
+    p_inviter_id: inviterId,
+  })
+  if (error) throw error
+  return { session: data, invitationsRemaining: invResult.remaining }
+}
+
+export async function fetchInviterInfo(userId) {
+  const { data, error } = await supabase
+    .from('user_subscriptions')
+    .select('id, invitations_remaining, status, plan:subscription_plans(name)')
+    .eq('user_id', userId)
+    .order('created_at', { ascending: false })
+    .limit(1)
+    .maybeSingle()
+  if (error) return null
   return data
 }

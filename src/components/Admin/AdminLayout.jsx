@@ -6,6 +6,7 @@ import AdminSeats         from './AdminSeats'
 import AdminSessions      from './AdminSessions'
 import AdminSubscriptions from './AdminSubscriptions'
 import AdminMenu          from './AdminMenu'
+import AdminDebts         from './AdminDebts'
 import { useKayan }        from '@/hooks/useKayan'
 import { useAdminRealtime } from '@/hooks/useRealtime'
 import useKayanStore        from '@/store/useKayanStore'
@@ -17,6 +18,7 @@ const VIEWS = {
   sessions:      AdminSessions,
   subscriptions: AdminSubscriptions,
   menu:          AdminMenu,
+  debts:         AdminDebts,
 }
 
 // ── Admin presence heartbeat ──────────────────────────────────

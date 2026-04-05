@@ -15,11 +15,14 @@ function useTick() {
 
 export default function CustomerBill() {
   const { loadMyOrders, getLiveBill } = useKayan()
-  const { mySession, myOrders, myOrdersLoading } = useKayanStore(s => ({
-    mySession:        s.mySession,
-    myOrders:         s.myOrders,
-    myOrdersLoading:  s.myOrdersLoading,
+  const { mySession, myOrders, myOrdersLoading, profile } = useKayanStore(s => ({
+    mySession:       s.mySession,
+    myOrders:        s.myOrders,
+    myOrdersLoading: s.myOrdersLoading,
+    profile:         s.profile,
   }))
+
+  const outstandingDebt = Number(profile?.outstanding_debt ?? 0)
 
   const [liveBill, setLiveBill] = useState(null)
 
@@ -64,7 +67,7 @@ export default function CustomerBill() {
     return () => clearInterval(t)
   }, [mySession?.id]) // eslint-disable-line react-hooks/exhaustive-deps
 
-  // ── No active session ──────────────────────────────────────
+  // ── No active session ──────────────────────────────
   if (!mySession) {
     return (
       <div className="p-5 animate-fade-in">
@@ -72,8 +75,28 @@ export default function CustomerBill() {
           <h2 className="font-display text-2xl font-bold mb-1">My Bill</h2>
           <p className="text-kayan-sub text-sm">Current session overview</p>
         </div>
+        {/* Outstanding debt banner */}
+        {outstandingDebt > 0 && (
+          <motion.div
+            initial={{ opacity: 0, y: -8 }} animate={{ opacity: 1, y: 0 }}
+            className="rounded-2xl bg-orange-500/[0.08] border border-orange-500/30
+                       p-4 mb-5 flex items-center gap-3"
+          >
+            <span className="text-2xl">💸</span>
+            <div className="flex-1">
+              <p className="text-sm font-bold text-orange-300">Outstanding Debt</p>
+              <p className="text-[10px] text-kayan-muted mt-0.5">
+                You have an unpaid balance from a previous visit.
+                Please settle with staff at your next check-in.
+              </p>
+            </div>
+            <p className="font-display text-xl font-bold text-orange-400 flex-shrink-0">
+              {outstandingDebt.toFixed(0)}<span className="text-xs ml-1">EGP</span>
+            </p>
+          </motion.div>
+        )}
         <div className="glass rounded-2xl border border-white/[0.05] p-10 text-center">
-          <p className="text-4xl mb-4">🧾</p>
+          <p className="text-4xl mb-4">🧭</p>
           <p className="text-kayan-sub text-sm">No active session.</p>
           <p className="text-kayan-muted text-xs mt-1">Ask staff to check you in.</p>
         </div>

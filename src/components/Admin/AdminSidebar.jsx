@@ -6,18 +6,21 @@ const NAV_ITEMS = [
   { id: 'orders',        icon: '🔔', label: 'Order Queue'   },
   { id: 'seats',         icon: '🪑', label: 'Seat Map'      },
   { id: 'sessions',      icon: '⏱', label: 'Sessions'      },
+  { id: 'debts',         icon: '💸', label: 'Debts'         },
   { id: 'subscriptions', icon: '✦',  label: 'Subscriptions' },
   { id: 'menu',          icon: '☕', label: 'Menu Items'    },
 ]
 
 export default function AdminSidebar({ activeTab, onTabChange }) {
   const { handleSignOut } = useAuth()
-  const profile = useKayanStore(s => s.profile)
-  const orders  = useKayanStore(s => s.orders)
-  const rooms   = useKayanStore(s => s.rooms)
-  const seats   = useKayanStore(s => s.seats)
+  const profile  = useKayanStore(s => s.profile)
+  const orders   = useKayanStore(s => s.orders)
+  const rooms    = useKayanStore(s => s.rooms)
+  const seats    = useKayanStore(s => s.seats)
+  const debts    = useKayanStore(s => s.debts)
 
   const pendingCount = orders.filter(o => o.status === 'pending').length
+  const debtCount    = debts.length
 
   return (
     <aside
@@ -66,6 +69,12 @@ export default function AdminSidebar({ activeTab, onTabChange }) {
               >
                 {pendingCount}
               </motion.span>
+            )}
+            {item.id === 'debts' && debtCount > 0 && (
+              <span className="absolute right-2 bg-orange-500 text-white rounded-full
+                               px-1.5 text-[9px] font-bold">
+                {debtCount}
+              </span>
             )}
           </button>
         ))}
