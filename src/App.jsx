@@ -2,7 +2,7 @@ import React, { useState, useEffect, lazy, Suspense } from 'react'
 import { useAuth } from '@/hooks/useAuth'
 import useKayanStore from '@/store/useKayanStore'
 import { supabase } from '@/lib/supabase'
-
+import kayanLogo from '@/assets/kayan-logo.png'
 import LoginPage from "@/pages/LoginPage"
 
 // 2. Lazy Load the heavy Dashboards (Code Splitting)
