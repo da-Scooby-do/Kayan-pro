@@ -1,19 +1,16 @@
-import React, { useState, useEffect, lazy, Suspense } from 'react'
-import { useAuth } from '@/hooks/useAuth'
+import React, { useEffect, lazy, Suspense } from 'react'
 import useKayanStore from '@/store/useKayanStore'
 import { supabase } from '@/lib/supabase'
-import kayanLogo from '@/assets/kayan-logo.png'
 import LoginPage from "@/pages/LoginPage"
 
-// 2. Lazy Load the heavy Dashboards (Code Splitting)
+// Lazy Load the heavy Dashboards (Code Splitting)
 const AdminLayout    = lazy(() => import("@/components/Admin/AdminLayout"))
 const CustomerLayout = lazy(() => import("@/components/Customer/CustomerLayout"))
 const OwnerLayout    = lazy(() => import("@/components/Owner/OwnerLayout"))
 
 function App() {
-  const { user, profile, authLoading, toast } = useKayanStore()
-  
-  const { handleSignOut } = useAuth()
+  // Cleaned up unused 'toast' and 'handleSignOut' variables to pass Vercel's strict checks
+  const { user, profile, authLoading } = useKayanStore()
 
   useEffect(() => {
     console.log("Kayan System Status:", {
@@ -38,14 +35,14 @@ function App() {
       </div>
       <button onClick={() => supabase.auth.signOut()}
         className="text-[9px] text-kayan-muted border border-white/10 px-4 py-2
-       rounded-lg uppercase tracking-widest hover:text-kayan-sub
+                   rounded-lg uppercase tracking-widest hover:text-kayan-sub
                    transition-all cursor-pointer bg-transparent">
         Taking too long? Sign out
       </button>
     </div>
   )
 
-  // 3. Determine which layout to show based on role
+  // Determine which layout to show based on role
   let LayoutComponent = CustomerLayout
   if (profile.role === 'owner') {
     LayoutComponent = OwnerLayout
@@ -53,7 +50,7 @@ function App() {
     LayoutComponent = AdminLayout
   }
 
-  // 4. Wrap the route in Suspense so React knows what to show while downloading the chunk
+  // Wrap the route in Suspense so React knows what to show while downloading the chunk
   return (
     <Suspense 
       fallback={
