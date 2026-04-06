@@ -62,38 +62,31 @@ export default function LoginPage() {
         className="min-h-screen flex flex-col items-center justify-center p-6
                  bg-kayan-bg text-kayan-text font-sans relative overflow-hidden"
       >
-        {/* ── Mobile background SVG ── */}
-        <div
-          className="absolute inset-0 md:hidden pointer-events-none"
-          style={{
-            backgroundImage: 'url(/kayan-bg-mobile.svg)',
-            backgroundSize: 'cover',
-            backgroundPosition: 'center',
-            backgroundRepeat: 'no-repeat',
-            opacity: 0.13,
-          }}
-        />
-        {/* ── Desktop background SVG ── */}
-        <div
-          className="absolute inset-0 hidden md:block pointer-events-none"
-          style={{
-            backgroundImage: 'url(/kayan-bg-desktop.svg)',
-            backgroundSize: 'cover',
-            backgroundPosition: 'center',
-            backgroundRepeat: 'no-repeat',
-            opacity: 0.13,
-          }}
-        />
-        {/* Dark gradient overlay so text stays readable */}
-        <div
-          className="absolute inset-0 pointer-events-none"
+        {/* ── Background: lazy-load SVGs only after splash done ── */}
+        {loaded && (
+          <>
+            <div className="absolute inset-0 md:hidden pointer-events-none"
+              style={{
+                backgroundImage: 'url(/kayan-bg-mobile.svg)',
+                backgroundSize: 'cover', backgroundPosition: 'center',
+                opacity: 0.12,
+              }} />
+            <div className="absolute inset-0 hidden md:block pointer-events-none"
+              style={{
+                backgroundImage: 'url(/kayan-bg-desktop.svg)',
+                backgroundSize: 'cover', backgroundPosition: 'center',
+                opacity: 0.12,
+              }} />
+          </>
+        )}
+        {/* Dark overlay — always visible */}
+        <div className="absolute inset-0 pointer-events-none"
           style={{
             background: `
-            radial-gradient(ellipse 80% 80% at 50% 50%, rgba(7,7,14,0.45) 0%, rgba(7,7,14,0.88) 100%),
-            radial-gradient(ellipse 60% 80% at 15% 50%, rgba(201,168,76,.04) 0%, transparent 70%)
+            radial-gradient(ellipse 80% 80% at 50% 50%, rgba(7,7,14,0.5) 0%, rgba(7,7,14,0.92) 100%),
+            radial-gradient(ellipse 60% 70% at 15% 50%, rgba(201,168,76,0.04) 0%, transparent 70%)
           `
-          }}
-        />
+          }} />
 
         {/* Decorative rings */}
         {[700, 490, 280].map((sz, i) => (
