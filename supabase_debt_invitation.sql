@@ -74,7 +74,7 @@ BEGIN
   v_total := COALESCE(v_total, 0);
 
   -- Close the session (same flow as normal checkout)
-  v_result := (SELECT checkout_session(p_session_id, p_admin_id));
+  v_result := checkout_session(p_session_id, p_admin_id);
 
   -- Add debt to customer profile
   UPDATE profiles
