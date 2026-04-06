@@ -32,6 +32,13 @@ import {
   activateSubscription,
   fetchCustomerSubscriptions,
   cancelSubscription,
+  // Debt
+  registerDebt,
+  payDebt,
+  fetchDebts,
+  // Invitations
+  openInvitationSession,
+  fetchInviterInfo,
 } from '@/lib/supabase'
 import useKayanStore from '@/store/useKayanStore'
 
@@ -326,6 +333,82 @@ export function useKayan() {
     }
   }, [loadCustomerSubs]) // eslint-disable-line
 
+  // ── Debt Actions ──────────────────────────────────────
+
+  const loadDebts = useCallback(async () => {
+    try {
+      const debts = await fetchDebts()
+      store.setDebts(debts)
+      return debts
+    } catch (err) {
+      store.showToast(`Failed to load debts: ${err.message}`, 'error')
+    }
+  }, []) // eslint-disable-line
+
+  /**
+   * Admin: register a session bill as a debt instead of collecting cash.
+   * Closes session (seat freed), logs debt to customer profile.
+   */
+  const handleRegisterDebt = useCallback(async (sessionId) => {
+    try {
+      const result = await registerDebt(sessionId, store.profile?.id)
+      store.removeSession(sessionId)
+      await Promise.all([loadSeats(), loadDebts()])
+      const amount = result?.amount ?? '?'
+      store.showToast(`💸 Debt of ${amount} EGP registered. Collect next visit.`, 'info')
+      return result
+    } catch (err) {
+      store.showToast(`Register debt failed: ${err.message}`, 'error')
+      throw err
+    }
+  }, [loadSeats, loadDebts]) // eslint-disable-line
+
+  /**
+   * Admin: mark a customer's outstanding debt as paid.
+   */
+  const handlePayDebt = useCallback(async (userId) => {
+    try {
+      const result = await payDebt(userId, store.profile?.id)
+      await loadDebts()
+      store.showToast(`✓ Debt of ${result?.paid ?? '?'} EGP collected — account cleared!`, 'ok')
+      return result
+    } catch (err) {
+      store.showToast(`Pay debt failed: ${err.message}`, 'error')
+      throw err
+    }
+  }, [loadDebts]) // eslint-disable-line
+
+  // ── Invitation Actions ────────────────────────────────
+
+  /**
+   * Admin: open a session using an invitation pass.
+   * Bearer (guest or subscriber post-expiry) pays orders only; stay = free.
+   * Decrements the inviter's invitations_remaining.
+   */
+  const handleOpenInvitationSession = useCallback(async (params) => {
+    try {
+      const result = await openInvitationSession(params)
+      await Promise.all([loadActiveSessions(), loadSeats()])
+      store.showToast(
+        `✓ Invitation session opened — ${result.invitationsRemaining} invitations left`,
+        'ok'
+      )
+      return result
+    } catch (err) {
+      store.showToast(`Invitation session failed: ${err.message}`, 'error')
+      throw err
+    }
+  }, [loadActiveSessions, loadSeats]) // eslint-disable-line
+
+  /**
+   * Fetch a subscriber's current invitation info (for the admin picker).
+   */
+  const getInviterInfo = useCallback(async (userId) => {
+    try {
+      return await fetchInviterInfo(userId)
+    } catch { return null }
+  }, [])
+
   // ── Bootstrap helpers ───────────────────────────────────────
 
 
@@ -336,8 +419,9 @@ export function useKayan() {
       loadSeats(),
       loadActiveSessions(),
       loadPendingOrders(),
+      loadDebts(),
     ])
-  }, [loadRooms, loadSeats, loadActiveSessions, loadPendingOrders])
+  }, [loadRooms, loadSeats, loadActiveSessions, loadPendingOrders, loadDebts])
 
   /** Load everything the customer app needs on mount. */
   const bootstrapCustomer = useCallback(async (userId) => {
@@ -379,6 +463,13 @@ export function useKayan() {
     loadCustomerSubs,
     handleActivateSub,
     handleCancelSub,
+    // Debt
+    loadDebts,
+    handleRegisterDebt,
+    handlePayDebt,
+    // Invitations
+    handleOpenInvitationSession,
+    getInviterInfo,
     // Bootstrap
     bootstrapAdmin,
     bootstrapCustomer,

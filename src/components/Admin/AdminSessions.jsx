@@ -17,10 +17,8 @@ function useTick(ms = 60_000) {
 
 export default function AdminSessions() {
   const { loadActiveSessions } = useKayan()
-  const { sessions, sessionsLoading } = useKayanStore(s => ({
-    sessions:        s.sessions,
-    sessionsLoading: s.sessionsLoading,
-  }))
+  const sessions = useKayanStore(s => s.sessions)
+  const sessionsLoading = useKayanStore(s => s.sessionsLoading)
 
   const [checkoutTarget,  setCheckoutTarget]  = useState(null)
   const [showOpenSession, setShowOpenSession] = useState(false)

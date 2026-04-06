@@ -10,10 +10,8 @@ const STATUS_TABS = ['all', 'pending', 'preparing', 'ready']
 
 export default function AdminOrders() {
   const { loadPendingOrders, handleUpdateOrderStatus } = useKayan()
-  const { orders, ordersLoading } = useKayanStore(s => ({
-    orders:        s.orders,
-    ordersLoading: s.ordersLoading,
-  }))
+  const orders = useKayanStore(s => s.orders)
+  const ordersLoading = useKayanStore(s => s.ordersLoading)
 
   const [activeTab, setActiveTab] = useState('all')
 

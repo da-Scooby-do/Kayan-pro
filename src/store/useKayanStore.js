@@ -131,6 +131,10 @@ const useKayanStore = create((set, get) => ({
   setSubscriptionPlans: (p) => set({ subscriptionPlans: p }),
   setCustomerSubs: (c) => set({ customerSubs: c }),
 
+  // ── Debts (admin view) ──────────────────────────────────
+  debts: [],
+  setDebts: (d) => set({ debts: d }),
+
   // ── Toast ─────────────────────────────────────────────────
   toast: null,
   _toastTimer: null,
@@ -155,7 +159,8 @@ const useKayanStore = create((set, get) => ({
     customers: [], menu: [], toast: null,
     hasNewOrder: false, sessionsLoading: false,
     ordersLoading: false, myOrdersLoading: false,
-    mySubscription: null, customerSubs: [],
+    mySubscription: null, customerSubs: [], subscriptionPlans: [],
+    debts: [],
   }),
 
 }))

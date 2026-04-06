@@ -63,10 +63,8 @@ export default function AdminLayout() {
   // Presence heartbeat — tells the owner this admin is active
   useAdminPresence()
 
-  const { hasNewOrder, setHasNewOrder } = useKayanStore(s => ({
-    hasNewOrder:    s.hasNewOrder,
-    setHasNewOrder: s.setHasNewOrder,
-  }))
+  const hasNewOrder = useKayanStore(s => s.hasNewOrder)
+  const setHasNewOrder = useKayanStore(s => s.setHasNewOrder)
 
   useEffect(() => { bootstrapAdmin() }, []) // eslint-disable-line
 
