@@ -4,6 +4,88 @@ import { useKayan } from '@/hooks/useKayan'
 import useKayanStore from '@/store/useKayanStore'
 import Avatar from '@/components/Shared/Avatar'
 
+// ── Cancel subscription confirmation modal ─────────────────────
+function CancelSubModal({ customer, onClose, onDone }) {
+  const { handleCancelSub } = useKayan()
+  const [loading, setLoading] = useState(false)
+  const [error,   setError]   = useState(null)
+
+  const confirm = async () => {
+    setLoading(true)
+    setError(null)
+    try {
+      await handleCancelSub(customer.sub_id)
+      onDone()
+      onClose()
+    } catch (err) {
+      setError(err?.message ?? 'Failed to cancel subscription.')
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  return (
+    <AnimatePresence>
+      <motion.div
+        initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
+        className="fixed inset-0 z-[8000] flex items-center justify-center p-5"
+        style={{ background: 'rgba(7,7,14,0.9)', backdropFilter: 'blur(12px)' }}
+        onClick={onClose}
+      >
+        <motion.div
+          initial={{ opacity: 0, y: 24, scale: 0.97 }}
+          animate={{ opacity: 1, y: 0, scale: 1 }}
+          exit={{ opacity: 0, y: 12, scale: 0.97 }}
+          transition={{ duration: 0.28 }}
+          className="glass border border-kayan-border rounded-3xl w-full max-w-sm p-8"
+          onClick={e => e.stopPropagation()}
+        >
+          <div className="text-center mb-6">
+            <div className="text-4xl mb-3">✕</div>
+            <h3 className="font-display text-xl font-bold mb-1">Cancel Subscription?</h3>
+            <p className="text-kayan-sub text-sm">{customer.full_name}</p>
+          </div>
+
+          {/* Active plan info */}
+          <div className="rounded-xl bg-red-500/[0.06] border border-red-500/20 p-4 mb-5">
+            <p className="text-xs font-semibold text-red-400 mb-1">⚠ This will immediately cancel</p>
+            <p className="text-[10px] text-kayan-muted leading-relaxed">
+              {customer.plan_name_ar ?? 'Current plan'} · {customer.days_remaining ?? 0} days remaining
+              will be forfeited. This action cannot be undone.
+            </p>
+          </div>
+
+          {error && (
+            <div className="mb-4 px-3 py-2 rounded-lg bg-red-500/10 border border-red-500/25">
+              <p className="text-[10px] text-red-400">⚠ {error}</p>
+            </div>
+          )}
+
+          <div className="flex gap-3">
+            <button
+              onClick={onClose}
+              className="btn-ghost flex-1"
+              disabled={loading}
+            >
+              Keep Active
+            </button>
+            <button
+              onClick={confirm}
+              disabled={loading}
+              className="flex-[2] py-3 rounded-xl text-sm font-bold text-red-400
+                         bg-red-500/10 border border-red-500/30
+                         hover:bg-red-500/20 hover:border-red-500/50
+                         transition-all cursor-pointer disabled:opacity-50"
+            >
+              {loading ? 'Cancelling…' : error ? '↻ Retry' : '✕ Yes, Cancel Subscription'}
+            </button>
+          </div>
+        </motion.div>
+      </motion.div>
+    </AnimatePresence>
+  )
+}
+
 // ── Activate subscription modal ───────────────────────────────
 function ActivateModal({ customer, onClose, onDone }) {
   const { handleActivateSub, loadSubscriptionPlans } = useKayan()
@@ -150,12 +232,13 @@ function ActivateModal({ customer, onClose, onDone }) {
   )
 }
 
-// ── Main component ─────────────────────────────────────────────
+// ── Main component ─────────────────────────────────────────────────────
 export default function AdminSubscriptions() {
-  const { loadCustomerSubs, handleCancelSub } = useKayan()
+  const { loadCustomerSubs } = useKayan()
   const customerSubs = useKayanStore(s => s.customerSubs)
 
   const [activateTarget, setActivateTarget] = useState(null)
+  const [cancelTarget,   setCancelTarget]   = useState(null)   // for cancel modal
   const [filter, setFilter]   = useState('all')  // all | active | none
   const [search, setSearch]   = useState('')
 
@@ -290,8 +373,19 @@ export default function AdminSubscriptions() {
                           onClick={() => setActivateTarget(c)}
                           className="text-[10px] text-kayan-gold border border-kayan-border
                                      px-2 py-1 rounded-lg hover:border-kayan-gold/40
-                                     transition-colors cursor-pointer bg-transparent">
+                                     transition-colors cursor-pointer bg-transparent"
+                        >
                           Renew
+                        </button>
+                        {/* Cancel button */}
+                        <button
+                          onClick={() => setCancelTarget(c)}
+                          className="text-[10px] text-red-400/70 border border-red-500/20
+                                     px-2 py-1 rounded-lg hover:bg-red-500/10 hover:border-red-500/35
+                                     transition-all cursor-pointer bg-transparent"
+                          title="Cancel this subscription"
+                        >
+                          ✕
                         </button>
                       </>
                     ) : (
@@ -335,6 +429,15 @@ export default function AdminSubscriptions() {
         <ActivateModal
           customer={activateTarget}
           onClose={() => setActivateTarget(null)}
+          onDone={() => loadCustomerSubs()}
+        />
+      )}
+
+      {/* Cancel modal */}
+      {cancelTarget && (
+        <CancelSubModal
+          customer={cancelTarget}
+          onClose={() => setCancelTarget(null)}
           onDone={() => loadCustomerSubs()}
         />
       )}

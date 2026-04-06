@@ -18,6 +18,7 @@ export default function CheckoutModal({ session, onClose, onSuccess }) {
   const [fetching,    setFetching]    = useState(true)
   const [debtConfirm, setDebtConfirm] = useState(false)  // two-step debt confirm
   const [debtLoading, setDebtLoading] = useState(false)
+  const [debtError,   setDebtError]   = useState(null)   // error msg if debt RPC failed
 
   // Fetch live bill from DB function on mount
   useEffect(() => {
@@ -42,11 +43,14 @@ export default function CheckoutModal({ session, onClose, onSuccess }) {
 
   const confirmDebt = async () => {
     setDebtLoading(true)
+    setDebtError(null)
     try {
       const result = await handleRegisterDebt(session.id)
       onSuccess?.(result)
-    } catch {
-      // error toasted in hook
+      onClose()          // always close after success
+    } catch (err) {
+      // error already toasted in hook; also surface it inline
+      setDebtError(err?.message ?? 'Failed to register debt. Please try again.')
     } finally {
       setDebtLoading(false)
     }
@@ -145,18 +149,31 @@ export default function CheckoutModal({ session, onClose, onSuccess }) {
                 {bill?.total_cost ?? '—'} EGP will be added to {session.customer_name}'s
                 tab. The session closes now and the amount is collected next visit.
               </p>
+              {debtError && (
+                <div className="mb-3 px-3 py-2 rounded-lg bg-red-500/10 border border-red-500/25">
+                  <p className="text-[10px] text-red-400 leading-relaxed">⚠ {debtError}</p>
+                  <p className="text-[9px] text-kayan-muted mt-1">
+                    Make sure the Supabase <code className="font-mono">register_debt</code> function is deployed.
+                  </p>
+                </div>
+              )}
               <div className="flex gap-2">
-                <button onClick={() => setDebtConfirm(false)}
-                  className="btn-ghost flex-1 text-xs py-2" disabled={debtLoading}>
+                <button
+                  onClick={() => { setDebtConfirm(false); setDebtError(null) }}
+                  className="btn-ghost flex-1 text-xs py-2"
+                  disabled={debtLoading}
+                >
                   Cancel
                 </button>
-                <button onClick={confirmDebt}
+                <button
+                  onClick={confirmDebt}
                   disabled={debtLoading}
                   className="flex-[2] py-2 rounded-xl text-xs font-bold text-orange-300
                              bg-orange-500/15 border border-orange-500/30
                              hover:bg-orange-500/25 transition-all cursor-pointer
-                             disabled:opacity-50">
-                  {debtLoading ? 'Registering…' : `Confirm Debt — ${bill?.total_cost ?? '?'} EGP`}
+                             disabled:opacity-50"
+                >
+                  {debtLoading ? 'Registering…' : debtError ? '↻ Retry Debt' : `Confirm Debt — ${bill?.total_cost ?? '?'} EGP`}
                 </button>
               </div>
             </div>

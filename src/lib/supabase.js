@@ -520,7 +520,12 @@ export async function registerDebt(sessionId, adminId) {
     p_admin_id:   adminId ?? null,
   })
   if (error) throw error
-  return data
+  // Supabase may return JSONB as a plain object or as a JSON string
+  try {
+    return typeof data === 'string' ? JSON.parse(data) : data
+  } catch {
+    return data
+  }
 }
 
 export async function payDebt(userId, adminId) {
