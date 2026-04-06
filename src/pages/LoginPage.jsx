@@ -62,22 +62,14 @@ export default function LoginPage() {
         className="min-h-screen flex flex-col items-center justify-center p-6
                  bg-kayan-bg text-kayan-text font-sans relative overflow-hidden"
       >
-        {/* ── Background: lazy-load SVGs only after splash done ── */}
+        {/* ── Background: desktop SVG only, lazy after splash ── */}
         {loaded && (
-          <>
-            <div className="absolute inset-0 md:hidden pointer-events-none"
-              style={{
-                backgroundImage: 'url(/kayan-bg-mobile.svg)',
-                backgroundSize: 'cover', backgroundPosition: 'center',
-                opacity: 0.12,
-              }} />
-            <div className="absolute inset-0 hidden md:block pointer-events-none"
-              style={{
-                backgroundImage: 'url(/kayan-bg-desktop.svg)',
-                backgroundSize: 'cover', backgroundPosition: 'center',
-                opacity: 0.12,
-              }} />
-          </>
+          <div className="absolute inset-0 pointer-events-none"
+            style={{
+              backgroundImage: 'url(/kayan-bg-desktop.svg)',
+              backgroundSize: 'cover', backgroundPosition: 'center',
+              opacity: 0.12,
+            }} />
         )}
         {/* Dark overlay — always visible */}
         <div className="absolute inset-0 pointer-events-none"
