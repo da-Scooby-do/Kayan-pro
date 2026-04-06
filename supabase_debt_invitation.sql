@@ -58,7 +58,6 @@ AS $$
 DECLARE
   v_user_id   UUID;
   v_total     NUMERIC;
-  v_result    JSONB;
 BEGIN
   -- Get session owner
   SELECT user_id INTO v_user_id FROM sessions WHERE id = p_session_id;
@@ -74,7 +73,7 @@ BEGIN
   v_total := COALESCE(v_total, 0);
 
   -- Close the session (same flow as normal checkout)
-  v_result := checkout_session(p_session_id, p_admin_id);
+  PERFORM checkout_session(p_session_id, p_admin_id);
 
   -- Add debt to customer profile
   UPDATE profiles
