@@ -10,20 +10,19 @@ import OwnerLayout from '@/components/Owner/OwnerLayout'
 import Toast from '@/components/Shared/Toast'
 
 function App() {
-  const { user, profile, authLoading } = useKayanStore(s => ({
-    user: s.user,
-    profile: s.profile,
-    authLoading: s.authLoading,
-  }))
+  // Individual selectors — never return new objects, no re-render loops
+  const user = useKayanStore(s => s.user)
+  const profile = useKayanStore(s => s.profile)
+  const authLoading = useKayanStore(s => s.authLoading)
 
-  // Boot auth listener — runs ONCE here, nowhere else
+  // Boot the Supabase auth listener — once, here only
   useAuthBoot()
 
   useEffect(() => {
     console.log('Kayan:', { role: profile?.role, loading: authLoading })
   }, [profile, authLoading])
 
-  // 1. Auth loading
+  // 1. Still loading auth
   if (authLoading) return (
     <div className="min-h-screen bg-kayan-bg flex items-center justify-center">
       <div className="animate-pulse text-kayan-gold tracking-widest text-[10px] uppercase">
@@ -40,11 +39,11 @@ function App() {
     </>
   )
 
-  // 3. Profile missing
+  // 3. Logged in but profile not yet fetched
   if (!profile) return (
     <div className="min-h-screen bg-kayan-bg flex items-center justify-center flex-col gap-4">
       <div className="animate-pulse text-kayan-gold uppercase tracking-widest text-[10px]">
-        Loading profile…
+        Loading…
       </div>
       <button
         onClick={() => supabase.auth.signOut()}
