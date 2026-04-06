@@ -1,17 +1,15 @@
 import { create } from 'zustand'
-import { subscribeWithSelector } from 'zustand/middleware'
 
-const useKayanStore = create(
-  subscribeWithSelector((set, get) => ({
+const useKayanStore = create((set, get) => ({
 
   // ── Auth ──────────────────────────────────────────────────
-  user:        null,
-  profile:     null,
+  user: null,
+  profile: null,
   authLoading: true,
 
-  setUser:        (user)    => set({ user }),
-  setProfile:     (profile) => set({ profile }),
-  setAuthLoading: (v)       => set({ authLoading: v }),
+  setUser: (user) => set({ user }),
+  setProfile: (profile) => set({ profile }),
+  setAuthLoading: (v) => set({ authLoading: v }),
 
   // ── Rooms ─────────────────────────────────────────────────
   rooms: [],
@@ -46,19 +44,19 @@ const useKayanStore = create(
   }),
 
   // ── Admin — Sessions ─────────────────────────────────────
-  sessions:        [],
+  sessions: [],
   sessionsLoading: false,
-  setSessionsLoading: (v)        => set({ sessionsLoading: v }),
-  setSessions:        (sessions) => set({ sessions }),
-  removeSession: (sessionId)     => set(state => ({
+  setSessionsLoading: (v) => set({ sessionsLoading: v }),
+  setSessions: (sessions) => set({ sessions }),
+  removeSession: (sessionId) => set(state => ({
     sessions: state.sessions.filter(s => s.id !== sessionId),
   })),
 
   // ── Admin — Orders ────────────────────────────────────────
-  orders:        [],
+  orders: [],
   ordersLoading: false,
-  setOrdersLoading: (v)      => set({ ordersLoading: v }),
-  setOrders:        (orders) => set({ orders }),
+  setOrdersLoading: (v) => set({ ordersLoading: v }),
+  setOrders: (orders) => set({ orders }),
 
   addOrder: (order) => set(state => ({
     orders: [order, ...state.orders],
@@ -71,12 +69,12 @@ const useKayanStore = create(
   })),
 
   // ── Customer ──────────────────────────────────────────────
-  mySession:       null,
-  myOrders:        [],
+  mySession: null,
+  myOrders: [],
   myOrdersLoading: false,
 
-  setMySession:       (s) => set({ mySession: s }),
-  setMyOrders:        (o) => set({ myOrders: o }),
+  setMySession: (s) => set({ mySession: s }),
+  setMyOrders: (o) => set({ myOrders: o }),
   setMyOrdersLoading: (v) => set({ myOrdersLoading: v }),
 
   addMyOrder: (order) => set(state => ({
@@ -116,26 +114,22 @@ const useKayanStore = create(
   clearCart: () => set({ cart: [] }),
 
   // ── Customers (admin picker) ──────────────────────────────
-  customers:        [],
+  customers: [],
   customersLoading: false,
-  setCustomers:        (customers) => set({ customers }),
-  setCustomersLoading: (v)         => set({ customersLoading: v }),
+  setCustomers: (customers) => set({ customers }),
+  setCustomersLoading: (v) => set({ customersLoading: v }),
 
   // ── Menu ──────────────────────────────────────────────────
   menu: [],
   setMenu: (menu) => set({ menu }),
 
   // ── Subscriptions ─────────────────────────────────────────
-  mySubscription:     null,
-  subscriptionPlans:  [],
-  customerSubs:       [],   // admin view
-  setMySubscription:    (s) => set({ mySubscription: s }),
+  mySubscription: null,
+  subscriptionPlans: [],
+  customerSubs: [],   // admin view
+  setMySubscription: (s) => set({ mySubscription: s }),
   setSubscriptionPlans: (p) => set({ subscriptionPlans: p }),
-  setCustomerSubs:      (c) => set({ customerSubs: c }),
-
-  // ── Debts (admin view) ──────────────────────────────────
-  debts:    [],
-  setDebts: (d) => set({ debts: d }),
+  setCustomerSubs: (c) => set({ customerSubs: c }),
 
   // ── Toast ─────────────────────────────────────────────────
   toast: null,
@@ -161,10 +155,9 @@ const useKayanStore = create(
     customers: [], menu: [], toast: null,
     hasNewOrder: false, sessionsLoading: false,
     ordersLoading: false, myOrdersLoading: false,
-    mySubscription: null, customerSubs: [], subscriptionPlans: [],
-    debts: [],
+    mySubscription: null, customerSubs: [],
   }),
 
-})))
+}))
 
 export default useKayanStore

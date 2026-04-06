@@ -1,12 +1,10 @@
 import { useState } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { useAuth } from '@/hooks/useAuth'
-import LoadingScreen from '@/components/Shared/LoadingScreen'
 
 export default function LoginPage() {
   const { handleSignIn, handleSignUp } = useAuth()
 
-  const [loaded, setLoaded] = useState(false)
   const [mode, setMode] = useState('login')
   const [form, setForm] = useState({ name: '', email: '', phone: '', password: '' })
   const [loading, setLoading] = useState(false)
@@ -51,197 +49,187 @@ export default function LoginPage() {
   }
 
   return (
-    <>
-      {/* ── Loading screen ── */}
-      {!loaded && <LoadingScreen onDone={() => setLoaded(true)} duration={2800} />}
-
-      <motion.div
-        initial={{ opacity: 0 }}
-        animate={{ opacity: loaded ? 1 : 0 }}
-        transition={{ duration: 0.8 }}
-        className="min-h-screen flex flex-col items-center justify-center p-6
+    <div
+      className="min-h-screen flex flex-col items-center justify-center p-6
                  bg-kayan-bg text-kayan-text font-sans relative overflow-hidden"
-      >
-        {/* ── Background: desktop SVG only, lazy after splash ── */}
-        {loaded && (
-          <div className="absolute inset-0 pointer-events-none"
-            style={{
-              backgroundImage: 'url(/kayan-bg-desktop.svg)',
-              backgroundSize: 'cover', backgroundPosition: 'center',
-              opacity: 0.12,
-            }} />
-        )}
-        {/* Dark overlay — always visible */}
-        <div className="absolute inset-0 pointer-events-none"
-          style={{
-            background: `
+    >
+      {/* Background SVG */}
+      <div className="absolute inset-0 pointer-events-none"
+        style={{
+          backgroundImage: 'url(/kayan-bg-desktop.svg)',
+          backgroundSize: 'cover', backgroundPosition: 'center',
+          opacity: 0.10,
+        }} />
+      {/* Dark overlay — always visible */}
+      <div className="absolute inset-0 pointer-events-none"
+        style={{
+          background: `
             radial-gradient(ellipse 80% 80% at 50% 50%, rgba(7,7,14,0.5) 0%, rgba(7,7,14,0.92) 100%),
             radial-gradient(ellipse 60% 70% at 15% 50%, rgba(201,168,76,0.04) 0%, transparent 70%)
           `
-          }} />
+        }} />
 
-        {/* Decorative rings */}
-        {[700, 490, 280].map((sz, i) => (
-          <div key={sz} className="absolute rounded-full pointer-events-none"
-            style={{
-              width: sz, height: sz,
-              border: `1px solid rgba(201,168,76,${0.03 + i * 0.015})`,
-              top: '50%', left: '50%',
-              transform: 'translate(-50%, -50%)',
-            }}
+      {/* Decorative rings */}
+      {[700, 490, 280].map((sz, i) => (
+        <div key={sz} className="absolute rounded-full pointer-events-none"
+          style={{
+            width: sz, height: sz,
+            border: `1px solid rgba(201,168,76,${0.03 + i * 0.015})`,
+            top: '50%', left: '50%',
+            transform: 'translate(-50%, -50%)',
+          }}
+        />
+      ))}
+
+      {/* Logo */}
+      <motion.div
+        initial={{ opacity: 0, y: 24 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.55 }}
+        className="text-center mb-8 relative z-10 flex flex-col items-center"
+      >
+        {/* Real logo image */}
+        <div className="mb-4" style={{ filter: 'drop-shadow(0 0 22px rgba(201,168,76,0.22))' }}>
+          <img
+            src="/kayan-logo.png"
+            alt="Kayan"
+            className="rounded-full object-cover"
+            style={{ width: 110, height: 110 }}
           />
-        ))}
+        </div>
 
-        {/* Logo */}
-        <motion.div
-          initial={{ opacity: 0, y: 24 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.55 }}
-          className="text-center mb-8 relative z-10 flex flex-col items-center"
-        >
-          {/* Real logo image */}
-          <div className="mb-4" style={{ filter: 'drop-shadow(0 0 22px rgba(201,168,76,0.22))' }}>
-            <img
-              src="/kayan-logo.png"
-              alt="Kayan"
-              className="rounded-full object-cover"
-              style={{ width: 110, height: 110 }}
-            />
-          </div>
-
-          <p className="text-[9px] tracking-[6px] text-kayan-gold/45 mb-1 uppercase">
-            Premium Workspace · Alexandria
-          </p>
-          <p className="text-kayan-text/30 tracking-[8px] text-[11px] uppercase font-light">
-            K A Y A N
-          </p>
-          <div className="w-14 h-px bg-gradient-to-r from-transparent via-kayan-gold/50
+        <p className="text-[9px] tracking-[6px] text-kayan-gold/45 mb-1 uppercase">
+          Premium Workspace · Alexandria
+        </p>
+        <p className="text-kayan-text/30 tracking-[8px] text-[11px] uppercase font-light">
+          K A Y A N
+        </p>
+        <div className="w-14 h-px bg-gradient-to-r from-transparent via-kayan-gold/50
                         to-transparent mx-auto mt-4" />
-        </motion.div>
+      </motion.div>
 
-        {/* Auth card */}
-        <motion.div
-          key={mode}
-          initial={{ opacity: 0, y: 18, scale: 0.97 }}
-          animate={{ opacity: 1, y: 0, scale: 1 }}
-          transition={{ duration: 0.3 }}
-          className="glass rounded-3xl border border-kayan-border p-8 w-full max-w-sm relative z-10"
-        >
-          {/* Mode toggle */}
-          <div className="flex rounded-xl overflow-hidden border border-white/[0.07] mb-7">
-            {[
-              { id: 'login', label: 'Sign In' },
-              { id: 'signup', label: 'Sign Up' },
-            ].map(m => (
-              <button key={m.id} onClick={() => switchMode(m.id)}
-                className={`flex-1 py-2 text-sm font-medium transition-all duration-200
+      {/* Auth card */}
+      <motion.div
+        key={mode}
+        initial={{ opacity: 0, y: 18, scale: 0.97 }}
+        animate={{ opacity: 1, y: 0, scale: 1 }}
+        transition={{ duration: 0.3 }}
+        className="glass rounded-3xl border border-kayan-border p-8 w-full max-w-sm relative z-10"
+      >
+        {/* Mode toggle */}
+        <div className="flex rounded-xl overflow-hidden border border-white/[0.07] mb-7">
+          {[
+            { id: 'login', label: 'Sign In' },
+            { id: 'signup', label: 'Sign Up' },
+          ].map(m => (
+            <button key={m.id} onClick={() => switchMode(m.id)}
+              className={`flex-1 py-2 text-sm font-medium transition-all duration-200
                           cursor-pointer border-none
                 ${mode === m.id
-                    ? 'bg-kayan-gold/15 text-kayan-gold'
-                    : 'bg-transparent text-kayan-muted hover:text-kayan-sub'
-                  }`}>
-                {m.label}
-              </button>
-            ))}
-          </div>
-
-          <form onSubmit={submit} className="space-y-3">
-
-            {/* ── Sign Up only fields ─────────────────────── */}
-            <AnimatePresence>
-              {mode === 'signup' && (
-                <motion.div key="signup-fields"
-                  initial={{ opacity: 0, height: 0 }}
-                  animate={{ opacity: 1, height: 'auto' }}
-                  exit={{ opacity: 0, height: 0 }}
-                  transition={{ duration: 0.22 }}
-                  className="space-y-3 overflow-hidden"
-                >
-                  {/* Full name */}
-                  <input
-                    type="text"
-                    placeholder="Full name"
-                    value={form.name}
-                    onChange={update('name')}
-                    required={mode === 'signup'}
-                    className="kayan-input"
-                  />
-
-                  {/* Phone number */}
-                  <div className="relative">
-                    <input
-                      type="tel"
-                      placeholder="Phone number (e.g. 01012345678)"
-                      value={form.phone}
-                      onChange={update('phone')}
-                      required={mode === 'signup'}
-                      className="kayan-input pr-10"
-                      dir="ltr"
-                    />
-                    <span className="absolute right-3 top-1/2 -translate-y-1/2 text-base
-                                   pointer-events-none">
-                      📱
-                    </span>
-                  </div>
-                </motion.div>
-              )}
-            </AnimatePresence>
-
-            {/* ── Shared fields ───────────────────────────── */}
-            <input
-              type="email"
-              placeholder="Email address"
-              value={form.email}
-              onChange={update('email')}
-              required
-              className="kayan-input"
-            />
-
-            <input
-              type="password"
-              placeholder="Password"
-              value={form.password}
-              onChange={update('password')}
-              required
-              minLength={6}
-              className="kayan-input"
-            />
-
-            {/* Error message */}
-            <AnimatePresence>
-              {error && (
-                <motion.p key="error"
-                  initial={{ opacity: 0, y: -6 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  exit={{ opacity: 0 }}
-                  className="text-red-400 text-xs px-1 flex items-start gap-1.5"
-                >
-                  <span>⚠</span>{error}
-                </motion.p>
-              )}
-            </AnimatePresence>
-
-            <button type="submit" disabled={loading}
-              className="btn-gold w-full mt-1 disabled:opacity-50 disabled:cursor-not-allowed">
-              {loading
-                ? (mode === 'login' ? 'Signing in…' : 'Creating account…')
-                : (mode === 'login' ? 'Enter Kayan →' : 'Create Account →')
-              }
+                  ? 'bg-kayan-gold/15 text-kayan-gold'
+                  : 'bg-transparent text-kayan-muted hover:text-kayan-sub'
+                }`}>
+              {m.label}
             </button>
-          </form>
+          ))}
+        </div>
 
-          {mode === 'signup' && (
-            <p className="text-center text-[10px] text-kayan-muted mt-4 leading-relaxed">
-              Your phone number is used by staff to identify you
-              and will never be shared.
-            </p>
-          )}
-        </motion.div>
+        <form onSubmit={submit} className="space-y-3">
 
-        <p className="mt-8 text-[9px] text-kayan-muted tracking-[4px] relative z-10">
-          KAYAN © 2025 · ALL RIGHTS RESERVED
-        </p>
+          {/* ── Sign Up only fields ─────────────────────── */}
+          <AnimatePresence>
+            {mode === 'signup' && (
+              <motion.div key="signup-fields"
+                initial={{ opacity: 0, height: 0 }}
+                animate={{ opacity: 1, height: 'auto' }}
+                exit={{ opacity: 0, height: 0 }}
+                transition={{ duration: 0.22 }}
+                className="space-y-3 overflow-hidden"
+              >
+                {/* Full name */}
+                <input
+                  type="text"
+                  placeholder="Full name"
+                  value={form.name}
+                  onChange={update('name')}
+                  required={mode === 'signup'}
+                  className="kayan-input"
+                />
+
+                {/* Phone number */}
+                <div className="relative">
+                  <input
+                    type="tel"
+                    placeholder="Phone number (e.g. 01012345678)"
+                    value={form.phone}
+                    onChange={update('phone')}
+                    required={mode === 'signup'}
+                    className="kayan-input pr-10"
+                    dir="ltr"
+                  />
+                  <span className="absolute right-3 top-1/2 -translate-y-1/2 text-base
+                                   pointer-events-none">
+                    📱
+                  </span>
+                </div>
+              </motion.div>
+            )}
+          </AnimatePresence>
+
+          {/* ── Shared fields ───────────────────────────── */}
+          <input
+            type="email"
+            placeholder="Email address"
+            value={form.email}
+            onChange={update('email')}
+            required
+            className="kayan-input"
+          />
+
+          <input
+            type="password"
+            placeholder="Password"
+            value={form.password}
+            onChange={update('password')}
+            required
+            minLength={6}
+            className="kayan-input"
+          />
+
+          {/* Error message */}
+          <AnimatePresence>
+            {error && (
+              <motion.p key="error"
+                initial={{ opacity: 0, y: -6 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0 }}
+                className="text-red-400 text-xs px-1 flex items-start gap-1.5"
+              >
+                <span>⚠</span>{error}
+              </motion.p>
+            )}
+          </AnimatePresence>
+
+          <button type="submit" disabled={loading}
+            className="btn-gold w-full mt-1 disabled:opacity-50 disabled:cursor-not-allowed">
+            {loading
+              ? (mode === 'login' ? 'Signing in…' : 'Creating account…')
+              : (mode === 'login' ? 'Enter Kayan →' : 'Create Account →')
+            }
+          </button>
+        </form>
+
+        {mode === 'signup' && (
+          <p className="text-center text-[10px] text-kayan-muted mt-4 leading-relaxed">
+            Your phone number is used by staff to identify you
+            and will never be shared.
+          </p>
+        )}
       </motion.div>
-    </>
+
+      <p className="mt-8 text-[9px] text-kayan-muted tracking-[4px] relative z-10">
+        KAYAN © 2025 · ALL RIGHTS RESERVED
+      </p>
+    </div>
   )
 }
