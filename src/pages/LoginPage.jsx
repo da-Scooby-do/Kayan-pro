@@ -72,39 +72,19 @@ export default function LoginPage() {
 
       {/* Logo */}
       <div className="relative z-10 text-center mb-7">
-        {/* Circular logo image */}
-        <div className="flex justify-center mb-4">
+        {/* Circular logo image only */}
+        <div className="flex justify-center">
           <img
             src="/kayan-logo.png"
             alt="Kayan"
-            width={88} height={88}
+            width={100} height={100}
             className="rounded-full object-cover"
             style={{
-              width: 88, height: 88,
-              filter: 'drop-shadow(0 0 18px rgba(201,168,76,0.35))',
+              width: 100, height: 100,
+              filter: 'drop-shadow(0 0 20px rgba(201,168,76,0.35))',
             }}
           />
         </div>
-        <p className="text-[9px] tracking-[5px] uppercase mb-2"
-          style={{ color: 'rgba(201,168,76,0.4)' }}>
-          PREMIUM WORKSPACE · ALEXANDRIA
-        </p>
-        <h1 className="font-display font-bold leading-none mb-1"
-          style={{
-            fontSize: 'clamp(58px, 14vw, 88px)',
-            background: 'linear-gradient(145deg, #EFC95A 0%, #C9A84C 55%, #A8843A 100%)',
-            WebkitBackgroundClip: 'text',
-            WebkitTextFillColor: 'transparent',
-            backgroundClip: 'text',
-          }}>
-          كيان
-        </h1>
-        <p className="tracking-[8px] text-xs uppercase font-light"
-          style={{ color: 'rgba(201,168,76,0.4)' }}>
-          K A Y A N
-        </p>
-        <div className="w-12 h-px mx-auto mt-4"
-          style={{ background: 'linear-gradient(90deg, transparent, rgba(201,168,76,0.5), transparent)' }} />
       </div>
 
       {/* Auth card */}
