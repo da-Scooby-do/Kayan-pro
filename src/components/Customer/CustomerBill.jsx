@@ -15,14 +15,9 @@ function useTick() {
 
 export default function CustomerBill() {
   const { loadMyOrders, getLiveBill } = useKayan()
-  const { mySession, myOrders, myOrdersLoading, profile } = useKayanStore(s => ({
-    mySession:       s.mySession,
-    myOrders:        s.myOrders,
-    myOrdersLoading: s.myOrdersLoading,
-    profile:         s.profile,
-  }))
-
-  const outstandingDebt = Number(profile?.outstanding_debt ?? 0)
+  const mySession = useKayanStore(s => s.mySession)
+  const myOrders = useKayanStore(s => s.myOrders)
+  const myOrdersLoading = useKayanStore(s => s.myOrdersLoading)
 
   const [liveBill, setLiveBill] = useState(null)
 
@@ -44,20 +39,20 @@ export default function CustomerBill() {
         setLiveBill(dbBill)
       } else {
         // Fallback: compute client-side so "Calculating..." never hangs
-        const pkg   = mySession.package ?? {}
-        const rate  = pkg.hourly_rate ?? 15
-        const cap   = pkg.daily_cap   ?? 75
-        const capH  = pkg.cap_hours   ?? 6
+        const pkg = mySession.package ?? {}
+        const rate = pkg.hourly_rate ?? 15
+        const cap = pkg.daily_cap ?? 75
+        const capH = pkg.cap_hours ?? 6
         const hours = (Date.now() - new Date(mySession.check_in)) / 3_600_000
         const capped = hours > capH
-        const stay  = capped ? cap : Math.max(rate, Math.ceil(hours * rate))
+        const stay = capped ? cap : Math.max(rate, Math.ceil(hours * rate))
         const orders = mySession.orders_total ?? 0
         setLiveBill({
-          hours_stayed:  +hours.toFixed(2),
-          stay_cost:     stay,
-          orders_total:  orders,
-          total_cost:    stay + orders,
-          is_capped:     capped,
+          hours_stayed: +hours.toFixed(2),
+          stay_cost: stay,
+          orders_total: orders,
+          total_cost: stay + orders,
+          is_capped: capped,
         })
       }
     }
@@ -67,7 +62,7 @@ export default function CustomerBill() {
     return () => clearInterval(t)
   }, [mySession?.id]) // eslint-disable-line react-hooks/exhaustive-deps
 
-  // ── No active session ──────────────────────────────
+  // ── No active session ──────────────────────────────────────
   if (!mySession) {
     return (
       <div className="p-5 animate-fade-in">
@@ -75,28 +70,8 @@ export default function CustomerBill() {
           <h2 className="font-display text-2xl font-bold mb-1">My Bill</h2>
           <p className="text-kayan-sub text-sm">Current session overview</p>
         </div>
-        {/* Outstanding debt banner */}
-        {outstandingDebt > 0 && (
-          <motion.div
-            initial={{ opacity: 0, y: -8 }} animate={{ opacity: 1, y: 0 }}
-            className="rounded-2xl bg-orange-500/[0.08] border border-orange-500/30
-                       p-4 mb-5 flex items-center gap-3"
-          >
-            <span className="text-2xl">💸</span>
-            <div className="flex-1">
-              <p className="text-sm font-bold text-orange-300">Outstanding Debt</p>
-              <p className="text-[10px] text-kayan-muted mt-0.5">
-                You have an unpaid balance from a previous visit.
-                Please settle with staff at your next check-in.
-              </p>
-            </div>
-            <p className="font-display text-xl font-bold text-orange-400 flex-shrink-0">
-              {outstandingDebt.toFixed(0)}<span className="text-xs ml-1">EGP</span>
-            </p>
-          </motion.div>
-        )}
         <div className="glass rounded-2xl border border-white/[0.05] p-10 text-center">
-          <p className="text-4xl mb-4">🧭</p>
+          <p className="text-4xl mb-4">🧾</p>
           <p className="text-kayan-sub text-sm">No active session.</p>
           <p className="text-kayan-muted text-xs mt-1">Ask staff to check you in.</p>
         </div>
@@ -105,19 +80,23 @@ export default function CustomerBill() {
   }
 
   const bill = liveBill
-  const pkg  = mySession.package ?? {}
-  const roomName  = mySession.seat?.room?.name
-  const seatNum   = mySession.seat?.seat_number
+  const pkg = mySession.package ?? {}
+  const roomName = mySession.seat?.room?.name
+  const seatNum = mySession.seat?.seat_number
 
   const billRows = bill ? [
-    { label: 'Stay duration',   value: `${bill.hours_stayed}h`                       },
-    { label: 'Hourly rate',     value: `${pkg.hourly_rate ?? BILLING.HOURLY_RATE} EGP/hr` },
-    { label: 'Stay cost',       value: `${bill.stay_cost} EGP`,
-      note: bill.is_capped ? '(capped ✓)' : null, noteColor: '#22C55E'               },
-    { label: 'Drinks & snacks', value: `${bill.orders_total} EGP`                      },
+    { label: 'Stay duration', value: `${bill.hours_stayed}h` },
+    { label: 'Hourly rate', value: `${pkg.hourly_rate ?? BILLING.HOURLY_RATE} EGP/hr` },
+    {
+      label: 'Stay cost', value: `${bill.stay_cost} EGP`,
+      note: bill.is_capped ? '(capped ✓)' : null, noteColor: '#22C55E'
+    },
+    { label: 'Drinks & snacks', value: `${bill.orders_total} EGP` },
     { divider: true },
-    { label: 'Total',           value: `${bill.total_cost} EGP`,
-      bold: true, valueColor: '#C9A84C'                                              },
+    {
+      label: 'Total', value: `${bill.total_cost} EGP`,
+      bold: true, valueColor: '#C9A84C'
+    },
   ] : []
 
   return (
@@ -128,7 +107,9 @@ export default function CustomerBill() {
       </div>
 
       {/* Active session card */}
-      <div className="glass rounded-2xl border border-kayan-border p-6 mb-4 card-hover">
+      <div
+        className="glass rounded-2xl border border-kayan-border p-6 mb-4 card-hover"
+      >
         {/* Session status */}
         <div className="flex items-center justify-between mb-5">
           <div className="flex items-center gap-2">
@@ -218,6 +199,7 @@ export default function CustomerBill() {
             return (
               <motion.div
                 key={order.id}
+                layout
                 className="flex items-center justify-between px-4 py-3
                            bg-white/[0.024] rounded-xl border border-white/[0.04]"
               >
@@ -232,7 +214,7 @@ export default function CustomerBill() {
                 </div>
                 <div className="flex items-center gap-3">
                   <span className="text-sm font-semibold text-kayan-gold">
-                    {(order.unit_price * order.quantity)} EGP
+                    {order.total_price} EGP
                   </span>
                   <span
                     className="status-badge"
@@ -254,10 +236,10 @@ export default function CustomerBill() {
         </p>
         <div className="grid grid-cols-2 gap-2 text-xs">
           {[
-            { label: 'Hourly rate',      value: `${BILLING.HOURLY_RATE} EGP/hr` },
-            { label: 'Daily cap',        value: `${BILLING.DAILY_CAP} EGP`      },
-            { label: 'Cap applies after',value: `${BILLING.CAP_HOURS} hours`    },
-            { label: 'Orders',           value: 'Billed to tab'                 },
+            { label: 'Hourly rate', value: `${BILLING.HOURLY_RATE} EGP/hr` },
+            { label: 'Daily cap', value: `${BILLING.DAILY_CAP} EGP` },
+            { label: 'Cap applies after', value: `${BILLING.CAP_HOURS} hours` },
+            { label: 'Orders', value: 'Billed to tab' },
           ].map(x => (
             <div key={x.label}>
               <span className="text-kayan-sub">{x.label}: </span>

@@ -14,16 +14,14 @@ import useKayanStore from '@/store/useKayanStore'
  */
 export default function ChangeSeatModal({ occupiedSeat, onClose }) {
   const { getSessionBySeat, handleMoveSeat, loadSeats } = useKayan()
-  const { rooms, seats } = useKayanStore(s => ({
-    rooms: s.rooms,
-    seats: s.seats,
-  }))
+  const rooms = useKayanStore(s => s.rooms)
+  const seats = useKayanStore(s => s.seats)
 
-  const [session,    setSession]    = useState(null)   // who's in the seat
-  const [loading,    setLoading]    = useState(true)
+  const [session, setSession] = useState(null)   // who's in the seat
+  const [loading, setLoading] = useState(true)
   const [targetRoom, setTargetRoom] = useState(null)   // room admin browsed to
-  const [newSeatId,  setNewSeatId]  = useState(null)   // seat admin picked
-  const [moving,     setMoving]     = useState(false)
+  const [newSeatId, setNewSeatId] = useState(null)   // seat admin picked
+  const [moving, setMoving] = useState(false)
 
   // Resolve who's sitting in the clicked seat
   useEffect(() => {
@@ -37,7 +35,7 @@ export default function ChangeSeatModal({ occupiedSeat, onClose }) {
   }, [occupiedSeat.id]) // eslint-disable-line
 
   const currentRoom = rooms.find(r => r.id === targetRoom)
-  const roomSeats   = (seats[targetRoom] ?? [])
+  const roomSeats = (seats[targetRoom] ?? [])
   const freeSeatCount = roomSeats.filter(s => !s.is_occupied).length
 
   const confirm = async () => {
@@ -67,8 +65,8 @@ export default function ChangeSeatModal({ occupiedSeat, onClose }) {
         <motion.div
           key="modal"
           initial={{ opacity: 0, y: 40 }}
-          animate={{ opacity: 1, y: 0  }}
-          exit={{   opacity: 0, y: 30  }}
+          animate={{ opacity: 1, y: 0 }}
+          exit={{ opacity: 0, y: 30 }}
           transition={{ duration: 0.28, ease: [0.16, 1, 0.3, 1] }}
           className="glass border border-kayan-border rounded-t-3xl sm:rounded-3xl
                      w-full sm:max-w-lg p-7"
@@ -176,15 +174,15 @@ export default function ChangeSeatModal({ occupiedSeat, onClose }) {
 
               <div className="flex flex-wrap gap-2">
                 {roomSeats.map(seat => {
-                  const isSelected  = newSeatId === seat.id
-                  const isCurrent   = seat.id === occupiedSeat.id
-                  const isOccupied  = seat.is_occupied && !isCurrent
+                  const isSelected = newSeatId === seat.id
+                  const isCurrent = seat.id === occupiedSeat.id
+                  const isOccupied = seat.is_occupied && !isCurrent
 
                   let cls = ''
-                  if (isSelected)      cls = 'bg-kayan-gold/25 border-kayan-gold/70 text-kayan-gold scale-110 cursor-pointer'
-                  else if (isCurrent)  cls = 'bg-orange-500/15 border-orange-500/40 text-orange-400 cursor-not-allowed'
+                  if (isSelected) cls = 'bg-kayan-gold/25 border-kayan-gold/70 text-kayan-gold scale-110 cursor-pointer'
+                  else if (isCurrent) cls = 'bg-orange-500/15 border-orange-500/40 text-orange-400 cursor-not-allowed'
                   else if (isOccupied) cls = 'bg-red-500/10 border-red-500/30 text-red-400 cursor-not-allowed opacity-60'
-                  else                 cls = 'bg-green-500/10 border-green-500/40 text-green-400 cursor-pointer hover:bg-green-500/25 hover:scale-110'
+                  else cls = 'bg-green-500/10 border-green-500/40 text-green-400 cursor-pointer hover:bg-green-500/25 hover:scale-110'
 
                   return (
                     <button

@@ -10,8 +10,8 @@ import useKayanStore from '@/store/useKayanStore'
 
 function playNotificationSound() {
   try {
-    const ctx  = new (window.AudioContext || window.webkitAudioContext)()
-    const osc  = ctx.createOscillator()
+    const ctx = new (window.AudioContext || window.webkitAudioContext)()
+    const osc = ctx.createOscillator()
     const gain = ctx.createGain()
     osc.connect(gain)
     gain.connect(ctx.destination)
@@ -26,29 +26,23 @@ function playNotificationSound() {
 
 export function useAdminRealtime() {
   const { addOrder, patchOrder, patchSeat, setHasNewOrder, showToast } = useKayanStore()
-  const { loadPendingOrders } = useKayan()
-  const orderRef   = useRef(null)
-  const seatRef    = useRef(null)
+  const orderRef = useRef(null)
+  const seatRef = useRef(null)
   const sessionRef = useRef(null)
 
   useEffect(() => {
     orderRef.current = subscribeToOrders(
       (newOrder) => {
-        // Add raw row immediately for instant count feedback,
-        // then refresh from the view to get enriched display fields
-        // (customer_name, room_name, item_name, total_price, etc.)
         addOrder(newOrder)
         setHasNewOrder(true)
         playNotificationSound()
         showToast(`🔔 New order from ${newOrder.customer_name ?? 'a customer'}`, 'info')
         setTimeout(() => setHasNewOrder(false), 8_000)
-        // Refresh from view after a short delay to get full field set
-        setTimeout(() => loadPendingOrders(), 800)
       },
       (updatedOrder) => { patchOrder(updatedOrder) }
     )
-    seatRef.current    = subscribeToSeats((s) => { patchSeat(s) })
-    sessionRef.current = subscribeToSessions(() => {}, () => {})
+    seatRef.current = subscribeToSeats((s) => { patchSeat(s) })
+    sessionRef.current = subscribeToSessions(() => { }, () => { })
 
     return () => {
       orderRef.current?.unsubscribe()
@@ -63,14 +57,12 @@ export function useAdminRealtime() {
 // + realtime as instant backup when it works
 export function useCustomerSessionWatch(userId) {
   const { loadMySession, loadMyOrders } = useKayan()
-  const { mySession, setMySession, showToast } = useKayanStore(s => ({
-    mySession:    s.mySession,
-    setMySession: s.setMySession,
-    showToast:    s.showToast,
-  }))
+  const mySession = useKayanStore(s => s.mySession)
+  const setMySession = useKayanStore(s => s.setMySession)
+  const showToast = useKayanStore(s => s.showToast)
 
-  const channelRef  = useRef(null)
-  const pollRef     = useRef(null)
+  const channelRef = useRef(null)
+  const pollRef = useRef(null)
   const prevSession = useRef(null)
   const checkingRef = useRef(false) // prevent overlapping polls
 

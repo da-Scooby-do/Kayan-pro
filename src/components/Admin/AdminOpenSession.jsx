@@ -9,8 +9,8 @@ function Steps({ current }) {
   return (
     <div className="flex items-center gap-0 mb-8">
       {steps.map((label, i) => {
-        const idx    = i + 1
-        const done   = current > idx
+        const idx = i + 1
+        const done = current > idx
         const active = current === idx
         return (
           <div key={label} className="flex items-center flex-1 last:flex-none">
@@ -18,7 +18,7 @@ function Steps({ current }) {
               <div className={`
                 w-8 h-8 rounded-full flex items-center justify-center text-xs font-bold
                 transition-all duration-300
-                ${done   ? 'bg-green-500/20 border border-green-500/50 text-green-400'   : ''}
+                ${done ? 'bg-green-500/20 border border-green-500/50 text-green-400' : ''}
                 ${active ? 'bg-kayan-gold/20 border border-kayan-gold/60 text-kayan-gold' : ''}
                 ${!done && !active ? 'bg-white/[0.04] border border-white/[0.08] text-kayan-muted' : ''}
               `}>
@@ -42,14 +42,12 @@ function Steps({ current }) {
 }
 
 // ── Step 1: Pick a customer ───────────────────────────────────
-function StepCustomer({ selected, onSelect, inviterId, inviterInfo, onPickInviter }) {
+function StepCustomer({ selected, onSelect }) {
   const { loadCustomers, checkCustomerSession } = useKayan()
-  const { customers, customersLoading } = useKayanStore(s => ({
-    customers:        s.customers,
-    customersLoading: s.customersLoading,
-  }))
+  const customers = useKayanStore(s => s.customers)
+  const customersLoading = useKayanStore(s => s.customersLoading)
 
-  const [search,        setSearch]        = useState('')
+  const [search, setSearch] = useState('')
   const [sessionStatus, setSessionStatus] = useState({}) // { [userId]: 'checking'|'active'|'free' }
 
   useEffect(() => { loadCustomers() }, []) // eslint-disable-line
@@ -67,8 +65,8 @@ function StepCustomer({ selected, onSelect, inviterId, inviterInfo, onPickInvite
     if (!q) return true
     return (
       c.full_name?.toLowerCase().includes(q) ||
-      c.phone?.toLowerCase().includes(q)     ||
-      c.username?.toLowerCase().includes(q)  ||
+      c.phone?.toLowerCase().includes(q) ||
+      c.username?.toLowerCase().includes(q) ||
       c.id?.toLowerCase().includes(q)
     )
   })
@@ -207,147 +205,14 @@ function StepCustomer({ selected, onSelect, inviterId, inviterInfo, onPickInvite
           )
         })}
       </div>
-
-      {/* ── Invitation toggle ──────────────────────────────── */}
-      <InviterPicker
-        inviterId={inviterId}
-        inviterInfo={inviterInfo}
-        customers={customers}
-        onPickInviter={onPickInviter}
-      />
-    </div>
-  )
-}
-
-// ── InviterPicker sub-component ─────────────────────────────
-function InviterPicker({ inviterId, inviterInfo, customers, onPickInviter }) {
-  const [open,         setOpen]         = useState(false)
-  const [search,       setSearch]       = useState('')
-  const [loadingInfo,  setLoadingInfo]  = useState(false)
-
-  const toggle = () => {
-    if (open) { onPickInviter(null); setSearch('') }
-    setOpen(v => !v)
-  }
-
-  const pick = async (c) => {
-    setLoadingInfo(true)
-    setSearch(c.full_name ?? '')
-    await onPickInviter(c)
-    setLoadingInfo(false)
-  }
-
-  const q = search.trim().toLowerCase()
-  const filtered = open && !inviterId
-    ? customers.filter(c =>
-        c.full_name?.toLowerCase().includes(q) ||
-        c.phone?.toLowerCase().includes(q)
-      ).slice(0, 8)
-    : []
-
-  const remaining = inviterInfo?.invitations_remaining ?? null
-  const noInv = remaining !== null && remaining <= 0
-
-  return (
-    <div className="mt-5 border-t border-white/[0.05] pt-4">
-      <button
-        type="button"
-        onClick={toggle}
-        className={`flex items-center gap-2 text-xs font-medium transition-colors cursor-pointer bg-transparent border-none px-0
-          ${open ? 'text-kayan-gold' : 'text-kayan-muted hover:text-kayan-sub'}`}
-      >
-        <span className={`w-4 h-4 rounded-full border flex items-center justify-center text-[9px]
-          ${open ? 'border-kayan-gold text-kayan-gold bg-kayan-gold/10' : 'border-white/20'}`}>
-          {open ? '✓' : '+'}
-        </span>
-        {open ? 'Using an invitation — tap to cancel' : 'Using an invitation pass'}
-      </button>
-
-      {open && (
-        <div className="mt-3 space-y-2">
-          {!inviterId ? (
-            <>
-              <input
-                type="text"
-                placeholder="Search subscriber by name or phone…"
-                value={search}
-                onChange={e => setSearch(e.target.value)}
-                className="kayan-input text-sm"
-                autoFocus
-              />
-              <div className="space-y-1 max-h-36 overflow-y-auto">
-                {filtered.map(c => (
-                  <button
-                    key={c.id}
-                    type="button"
-                    onClick={() => pick(c)}
-                    className="w-full flex items-center gap-3 p-2.5 rounded-xl cursor-pointer
-                               bg-white/[0.025] border border-white/[0.05]
-                               hover:border-kayan-gold/25 hover:bg-white/[0.04]
-                               transition-all text-left"
-                  >
-                    <div className="w-7 h-7 rounded-full flex items-center justify-center
-                                    text-xs font-bold text-kayan-gold bg-kayan-gold/10 flex-shrink-0">
-                      {(c.full_name ?? 'G')[0].toUpperCase()}
-                    </div>
-                    <div>
-                      <p className="text-xs font-medium">{c.full_name}</p>
-                      {c.phone && <p className="text-[10px] text-kayan-muted">{c.phone}</p>}
-                    </div>
-                    {c.sub_status === 'active' && (
-                      <span className="ml-auto text-[8px] font-bold text-kayan-bg bg-kayan-gold px-1.5 py-0.5 rounded-full">
-                        ❆ SUB
-                      </span>
-                    )}
-                  </button>
-                ))}
-              </div>
-            </>
-          ) : (
-            // ── Inviter selected ───────────────────────────
-            <div className={`rounded-xl p-3 border ${
-              noInv ? 'bg-red-500/[0.07] border-red-500/25' : 'bg-kayan-gold/[0.06] border-kayan-gold/25'
-            }`}>
-              {loadingInfo ? (
-                <p className="text-[10px] text-kayan-muted">Checking invitations…</p>
-              ) : noInv ? (
-                <>
-                  <p className="text-xs font-semibold text-red-400 mb-0.5">⚠ No invitations remaining</p>
-                  <p className="text-[10px] text-kayan-muted">
-                    This subscriber has used all their invitations.
-                    You can still proceed; the session will charge normal rates.
-                  </p>
-                </>
-              ) : (
-                <>
-                  <p className="text-xs font-semibold text-kayan-gold mb-0.5">✠ Invitation Pass</p>
-                  <p className="text-[10px] text-kayan-muted">
-                    {remaining !== null ? `${remaining} invitation${remaining === 1 ? '' : 's'} remaining` : 'Checking…'}
-                    {' '}— stay will be <strong className="text-kayan-text">free</strong>; orders only.
-                  </p>
-                </>
-              )}
-              <button
-                type="button"
-                onClick={() => { onPickInviter(null); setSearch('') }}
-                className="text-[10px] text-kayan-muted hover:text-kayan-sub mt-2 cursor-pointer bg-transparent border-none"
-              >
-                × Change inviter
-              </button>
-            </div>
-          )}
-        </div>
-      )}
     </div>
   )
 }
 
 // ── Step 2: Pick a seat ───────────────────────────────────────
 function StepSeat({ selectedSeatId, onSelect }) {
-  const { rooms, seats } = useKayanStore(s => ({
-    rooms: s.rooms,
-    seats: s.seats,
-  }))
+  const rooms = useKayanStore(s => s.rooms)
+  const seats = useKayanStore(s => s.seats)
 
   const [activeRoomId, setActiveRoomId] = useState(rooms[0]?.id ?? null)
 
@@ -355,7 +220,7 @@ function StepSeat({ selectedSeatId, onSelect }) {
     if (rooms.length && !activeRoomId) setActiveRoomId(rooms[0].id)
   }, [rooms, activeRoomId])
 
-  const currentRoom  = rooms.find(r => r.id === activeRoomId)
+  const currentRoom = rooms.find(r => r.id === activeRoomId)
   const currentSeats = (seats[activeRoomId] ?? [])
 
   return (
@@ -405,9 +270,9 @@ function StepSeat({ selectedSeatId, onSelect }) {
           const isOccupied = seat.is_occupied
 
           let cls = ''
-          if (isSelected)       cls = 'bg-kayan-gold/25 border-kayan-gold/70 text-kayan-gold scale-110'
-          else if (isOccupied)  cls = 'bg-red-500/10 border-red-500/35 text-red-400 cursor-not-allowed opacity-70'
-          else                  cls = 'bg-green-500/10 border-green-500/40 text-green-400 cursor-pointer hover:bg-green-500/25 hover:scale-110'
+          if (isSelected) cls = 'bg-kayan-gold/25 border-kayan-gold/70 text-kayan-gold scale-110'
+          else if (isOccupied) cls = 'bg-red-500/10 border-red-500/35 text-red-400 cursor-not-allowed opacity-70'
+          else cls = 'bg-green-500/10 border-green-500/40 text-green-400 cursor-pointer hover:bg-green-500/25 hover:scale-110'
 
           return (
             <button
@@ -434,7 +299,7 @@ function StepSeat({ selectedSeatId, onSelect }) {
           className="text-xs text-kayan-gold mt-4 flex items-center gap-1.5"
         >
           <span className="w-1.5 h-1.5 rounded-full bg-kayan-gold inline-block" />
-          Seat {currentSeats.find(s => s.id === selectedSeatId)?.seat_number ?? '—'} selected in {currentRoom?.name}
+          Seat {selectedSeatId.split('-')[1]} selected in {currentRoom?.name}
         </motion.p>
       )}
     </div>
@@ -442,13 +307,12 @@ function StepSeat({ selectedSeatId, onSelect }) {
 }
 
 // ── Step 3: Confirm ───────────────────────────────────────────
-function StepConfirm({ customer, selectedSeat, rooms, inviterId, inviterInfo }) {
-  // selectedSeat is the full seat object — contains room_id and seat_number directly
-  const room = rooms.find(r => r.id === selectedSeat?.room_id)
-  const seat = selectedSeat
-
-  const usingInvitation = !!inviterId
-  const remaining = inviterInfo?.invitations_remaining ?? null
+function StepConfirm({ customer, seatId, rooms, seats }) {
+  // Resolve seat + room names from IDs
+  const [roomId] = seatId?.split('-') ?? []
+  const room = rooms.find(r => r.id === Number(roomId))
+  const roomSeats = seats[Number(roomId)] ?? []
+  const seat = roomSeats.find(s => s.id === seatId)
 
   return (
     <div>
@@ -485,31 +349,17 @@ function StepConfirm({ customer, selectedSeat, rooms, inviterId, inviterInfo }) 
           </div>
         </div>
 
-        {/* Billing info — changes based on invitation */}
-        {usingInvitation ? (
-          <div className="flex items-center gap-3 p-4 rounded-xl
-                          bg-kayan-gold/[0.06] border border-kayan-gold/30">
-            <span className="text-2xl">✉️</span>
-            <div>
-              <p className="font-semibold text-sm text-kayan-gold">Invitation Pass</p>
-              <p className="text-xs text-kayan-muted">
-                Stay is <strong className="text-green-400">free</strong> — orders only
-                {remaining !== null && ` · ${remaining - 1 >= 0 ? remaining - 1 : 0} invitations left after`}
-              </p>
-            </div>
+        {/* Billing info */}
+        <div className="flex items-center gap-3 p-4 rounded-xl
+                        bg-white/[0.03] border border-white/[0.06]">
+          <span className="text-2xl">⏱</span>
+          <div>
+            <p className="font-semibold text-sm">Standard Package</p>
+            <p className="text-xs text-kayan-muted">
+              15 EGP/hr · 75 EGP daily cap after 6h
+            </p>
           </div>
-        ) : (
-          <div className="flex items-center gap-3 p-4 rounded-xl
-                          bg-white/[0.03] border border-white/[0.06]">
-            <span className="text-2xl">⏱</span>
-            <div>
-              <p className="font-semibold text-sm">Standard Package</p>
-              <p className="text-xs text-kayan-muted">
-                15 EGP/hr · 75 EGP daily cap after 6h
-              </p>
-            </div>
-          </div>
-        )}
+        </div>
       </div>
 
       <p className="text-[10px] text-kayan-muted mt-5 text-center">
@@ -521,60 +371,35 @@ function StepConfirm({ customer, selectedSeat, rooms, inviterId, inviterInfo }) 
 
 // ── Main Modal ────────────────────────────────────────────────
 export default function AdminOpenSession({ onClose, onSuccess }) {
-  const { handleOpenSession, handleOpenInvitationSession, loadSeats, getInviterInfo } = useKayan()
-  const { profile, rooms, seats } = useKayanStore(s => ({
-    profile: s.profile,
-    rooms:   s.rooms,
-    seats:   s.seats,
-  }))
+  const { handleOpenSession, loadSeats } = useKayan()
+  const profile = useKayanStore(s => s.profile)
+  const rooms = useKayanStore(s => s.rooms)
+  const seats = useKayanStore(s => s.seats)
 
-  const [step,         setStep]         = useState(1)
-  const [customer,     setCustomer]     = useState(null)
-  const [selectedSeat, setSelectedSeat] = useState(null)  // full seat object
-  const [loading,      setLoading]      = useState(false)
-  // Invitation
-  const [inviterId,    setInviterId]    = useState(null)  // subscriber giving the invitation
-  const [inviterInfo,  setInviterInfo]  = useState(null)  // { invitations_remaining, plan }
+  const [step, setStep] = useState(1)
+  const [customer, setCustomer] = useState(null)
+  const [seatId, setSeatId] = useState(null)
+  const [loading, setLoading] = useState(false)
 
   // Keep seats fresh while modal is open
   useEffect(() => { loadSeats() }, []) // eslint-disable-line
 
-  const canNext = step === 1 ? !!customer : step === 2 ? !!selectedSeat : true
-
-  // When inviter is picked, load their invitation info
-  const pickInviter = async (inviterCustomer) => {
-    setInviterId(inviterCustomer?.id ?? null)
-    if (!inviterCustomer) { setInviterInfo(null); return }
-    const info = await getInviterInfo(inviterCustomer.id)
-    setInviterInfo(info)
-  }
+  const canNext = step === 1 ? !!customer : step === 2 ? !!seatId : true
 
   const handleConfirm = async () => {
-    if (!customer || !selectedSeat?.id) return
+    if (!customer || !seatId) return
     setLoading(true)
     try {
-      if (inviterId) {
-        // Invitation session — stay is free, orders only
-        await handleOpenInvitationSession({
-          userId:    customer.id,
-          seatId:    selectedSeat.id,
-          packageId: 1,
-          adminId:   profile?.id,
-          inviterId,
-        })
-      } else {
-        // Normal session
-        await handleOpenSession({
-          userId:    customer.id,
-          seatId:    selectedSeat.id,
-          packageId: 1,
-          adminId:   profile?.id,
-        })
-      }
+      await handleOpenSession({
+        userId: customer.id,
+        seatId,
+        packageId: 1,
+        adminId: profile?.id,
+      })
       onSuccess?.()
       onClose()
     } catch {
-      // error toasted inside hook
+      // error toasted inside handleOpenSession
     } finally {
       setLoading(false)
     }
@@ -582,20 +407,14 @@ export default function AdminOpenSession({ onClose, onSuccess }) {
 
   const VIEW = {
     1: <StepCustomer
-          selected={customer}
-          onSelect={c => { setCustomer(c); setStep(2) }}
-          inviterId={inviterId}
-          inviterInfo={inviterInfo}
-          onPickInviter={pickInviter}
-        />,
+      selected={customer}
+      onSelect={c => { setCustomer(c); setStep(2) }}
+    />,
     2: <StepSeat
-          selectedSeatId={selectedSeat?.id}
-          onSelect={s => { setSelectedSeat(s); setStep(3) }}
-        />,
-    3: <StepConfirm
-          customer={customer} selectedSeat={selectedSeat} rooms={rooms}
-          inviterId={inviterId} inviterInfo={inviterInfo}
-        />,
+      selectedSeatId={seatId}
+      onSelect={s => { setSeatId(s.id); setStep(3) }}
+    />,
+    3: <StepConfirm customer={customer} seatId={seatId} rooms={rooms} seats={seats} />,
   }
 
   return (
@@ -612,8 +431,8 @@ export default function AdminOpenSession({ onClose, onSuccess }) {
         <motion.div
           key="modal"
           initial={{ opacity: 0, y: 40 }}
-          animate={{ opacity: 1, y: 0  }}
-          exit={{   opacity: 0, y: 30  }}
+          animate={{ opacity: 1, y: 0 }}
+          exit={{ opacity: 0, y: 30 }}
           transition={{ duration: 0.3, ease: [0.16, 1, 0.3, 1] }}
           className="glass border border-kayan-border rounded-t-3xl sm:rounded-3xl
                      w-full sm:max-w-lg p-7"
@@ -645,8 +464,8 @@ export default function AdminOpenSession({ onClose, onSuccess }) {
             <motion.div
               key={step}
               initial={{ opacity: 0, x: 12 }}
-              animate={{ opacity: 1, x: 0  }}
-              exit={{   opacity: 0, x: -8  }}
+              animate={{ opacity: 1, x: 0 }}
+              exit={{ opacity: 0, x: -8 }}
               transition={{ duration: 0.18 }}
             >
               {VIEW[step]}
