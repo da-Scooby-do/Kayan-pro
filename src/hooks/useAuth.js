@@ -2,18 +2,21 @@ import { useEffect, useCallback } from 'react'
 import { supabase, fetchProfile, signUp, signIn } from '@/lib/supabase'
 import useKayanStore from '@/store/useKayanStore'
 
-export function useAuth() {
-  const { setUser, setProfile, setAuthLoading, showToast, resetStore } = useKayanStore()
+// ── Internal profile loader ───────────────────────────────────
+async function loadProfileInto(authUser, setProfile) {
+  if (!authUser) { setProfile(null); return }
+  try {
+    const profile = await fetchProfile(authUser.id)
+    setProfile(profile)
+  } catch {
+    setProfile(null)
+  }
+}
 
-  const loadProfile = useCallback(async (authUser) => {
-    if (!authUser) { setProfile(null); return }
-    try {
-      const profile = await fetchProfile(authUser.id)
-      setProfile(profile)
-    } catch {
-      setProfile(null)
-    }
-  }, [setProfile])
+// ── useAuthBoot — call ONCE at App root ───────────────────────
+// Starts the Supabase auth listener and hydrates the store.
+export function useAuthBoot() {
+  const { setUser, setProfile, setAuthLoading } = useKayanStore()
 
   useEffect(() => {
     let mounted = true
@@ -22,7 +25,7 @@ export function useAuth() {
       if (!mounted) return
       const authUser = session?.user ?? null
       setUser(authUser)
-      loadProfile(authUser).finally(() => setAuthLoading(false))
+      loadProfileInto(authUser, setProfile).finally(() => setAuthLoading(false))
     })
 
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
@@ -30,7 +33,7 @@ export function useAuth() {
         if (!mounted) return
         const authUser = session?.user ?? null
         setUser(authUser)
-        await loadProfile(authUser)
+        await loadProfileInto(authUser, setProfile)
         setAuthLoading(false)
       }
     )
@@ -40,6 +43,12 @@ export function useAuth() {
       subscription.unsubscribe()
     }
   }, []) // eslint-disable-line
+}
+
+// ── useAuth — call anywhere to get action functions ───────────
+// No side effects — safe to call in multiple components.
+export function useAuth() {
+  const { showToast, resetStore, setUser, setProfile } = useKayanStore()
 
   const handleSignUp = useCallback(async (email, password, fullName, phone) => {
     try {
@@ -61,17 +70,12 @@ export function useAuth() {
     }
   }, [showToast])
 
-  // ── Sign out: clear store FIRST, then Supabase ──────────────
-  // This makes the exit button feel instant — UI resets immediately
-  // even if the Supabase network call takes a moment.
+  // Instant sign out — clears store first so UI reacts immediately
   const handleSignOut = useCallback(async () => {
-    // 1. Wipe all local state immediately → UI snaps to login screen
     resetStore()
     setUser(null)
     setProfile(null)
-
-    // 2. Then tell Supabase (fire and forget — don't await)
-    supabase.auth.signOut().catch(() => {})
+    supabase.auth.signOut().catch(() => { })
   }, [resetStore, setUser, setProfile])
 
   return { handleSignUp, handleSignIn, handleSignOut }
