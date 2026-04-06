@@ -47,9 +47,17 @@ export default function LoginPage() {
     <div className="min-h-screen bg-kayan-bg text-kayan-text font-sans
                     flex flex-col items-center justify-center p-5 relative overflow-hidden">
 
+      {/* Desktop background SVG — laptop only, not loaded on mobile */}
+      <div className="absolute inset-0 pointer-events-none hidden md:block"
+        style={{
+          backgroundImage: 'url(/kayan-bg-desktop.svg)',
+          backgroundSize: 'cover', backgroundPosition: 'center',
+          opacity: 0.10,
+        }} />
+
       {/* Gold radial glow */}
       <div className="absolute inset-0 pointer-events-none"
-        style={{ background: 'radial-gradient(ellipse 70% 60% at 50% 40%, rgba(201,168,76,0.06) 0%, transparent 70%)' }} />
+        style={{ background: 'radial-gradient(ellipse 70% 60% at 50% 40%, rgba(201,168,76,0.07) 0%, transparent 70%)' }} />
 
       {/* Rings */}
       {[500, 340, 200].map((sz, i) => (
@@ -64,7 +72,20 @@ export default function LoginPage() {
 
       {/* Logo */}
       <div className="relative z-10 text-center mb-7">
-        <p className="text-[9px] tracking-[5px] uppercase mb-3"
+        {/* Circular logo image */}
+        <div className="flex justify-center mb-4">
+          <img
+            src="/kayan-logo.png"
+            alt="Kayan"
+            width={88} height={88}
+            className="rounded-full object-cover"
+            style={{
+              width: 88, height: 88,
+              filter: 'drop-shadow(0 0 18px rgba(201,168,76,0.35))',
+            }}
+          />
+        </div>
+        <p className="text-[9px] tracking-[5px] uppercase mb-2"
           style={{ color: 'rgba(201,168,76,0.4)' }}>
           PREMIUM WORKSPACE · ALEXANDRIA
         </p>
