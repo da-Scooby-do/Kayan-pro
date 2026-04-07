@@ -22,6 +22,15 @@ function App() {
     console.log('Kayan:', { role: profile?.role, loading: authLoading })
   }, [profile, authLoading])
 
+  // Sync URL with auth state so the browser bar is never stuck on /login
+  useEffect(() => {
+    if (authLoading) return
+    const target = user ? '/' : '/login'
+    if (window.location.pathname !== target) {
+      window.history.replaceState({}, '', target)
+    }
+  }, [user, authLoading])
+
   // 1. Still loading auth
   if (authLoading) return (
     <div className="min-h-screen bg-kayan-bg flex items-center justify-center">

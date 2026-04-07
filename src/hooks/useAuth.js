@@ -21,8 +21,20 @@ export function useAuthBoot() {
   useEffect(() => {
     let mounted = true
 
+    // Safety net: if Supabase auth lock hangs (common on mobile/slow connections),
+    // force-release the loading state after 8 seconds so the app never freezes.
+    const hangGuard = setTimeout(() => {
+      if (mounted) {
+        console.warn('Kayan: auth timed out — forcing loading=false')
+        setUser(null)
+        setProfile(null)
+        setAuthLoading(false)
+      }
+    }, 8000)
+
     supabase.auth.getSession().then(({ data: { session } }) => {
       if (!mounted) return
+      clearTimeout(hangGuard)
       const authUser = session?.user ?? null
       setUser(authUser)
       loadProfileInto(authUser, setProfile).finally(() => setAuthLoading(false))
@@ -31,6 +43,7 @@ export function useAuthBoot() {
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
       async (_event, session) => {
         if (!mounted) return
+        clearTimeout(hangGuard)
         const authUser = session?.user ?? null
         setUser(authUser)
         await loadProfileInto(authUser, setProfile)
@@ -40,6 +53,7 @@ export function useAuthBoot() {
 
     return () => {
       mounted = false
+      clearTimeout(hangGuard)
       subscription.unsubscribe()
     }
   }, []) // eslint-disable-line

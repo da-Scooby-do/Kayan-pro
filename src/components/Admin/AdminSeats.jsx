@@ -6,14 +6,16 @@ import Pill from '@/components/Shared/Pill'
 import RoomTabs from '@/components/Shared/RoomTabs'
 import RoomFloorPlan from '@/components/Shared/RoomFloorPlan'
 import ChangeSeatModal from './ChangeSeatModal'
+import AdminOpenSession from './AdminOpenSession'
 
 export default function AdminSeats() {
   const { loadSeats, handleToggleSeat } = useKayan()
   const rooms = useKayanStore(s => s.rooms)
   const seats = useKayanStore(s => s.seats)
 
-  const [selectedRoomId,  setSelectedRoomId]  = useState(null)
-  const [changeSeatTarget, setChangeSeatTarget] = useState(null)
+  const [selectedRoomId,    setSelectedRoomId]    = useState(null)
+  const [changeSeatTarget,  setChangeSeatTarget]  = useState(null)
+  const [openSessionSeatId, setOpenSessionSeatId] = useState(null)
 
   useEffect(() => {
     if (rooms.length && selectedRoomId === null) setSelectedRoomId(rooms[0].id)
@@ -36,10 +38,13 @@ export default function AdminSeats() {
 
   const onSeatClick = (seat) => {
     if (!seat.is_occupied) {
-      handleToggleSeat(seat.id, seat.room_id, seat.is_occupied)
+      // Open the full check-in flow with this seat pre-selected
+      setOpenSessionSeatId(seat.id)
     } else if (seat.current_session_id) {
+      // Occupied with a live session — offer seat transfer
       setChangeSeatTarget({ ...seat, room_name: currentRoom?.name })
     } else {
+      // Manually marked occupied (no session) — just free it
       handleToggleSeat(seat.id, seat.room_id, seat.is_occupied)
     }
   }
@@ -53,7 +58,7 @@ export default function AdminSeats() {
         </p>
         <h2 className="font-display text-3xl font-bold mb-1">Seat Management</h2>
         <p className="text-kayan-sub text-sm">
-          <span className="text-green-400">Green seat</span> — click to mark occupied ·
+          <span className="text-green-400">Green seat</span> — click to open a session ·
           <span className="text-red-400 ml-1">Red seat</span> — click to move customer
         </p>
       </div>
@@ -127,6 +132,14 @@ export default function AdminSeats() {
           />
         )}
       </AnimatePresence>
+
+      {openSessionSeatId && (
+        <AdminOpenSession
+          initialSeatId={openSessionSeatId}
+          onClose={() => setOpenSessionSeatId(null)}
+          onSuccess={() => { setOpenSessionSeatId(null); loadSeats() }}
+        />
+      )}
     </div>
   )
 }

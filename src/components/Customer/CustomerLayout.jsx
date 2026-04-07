@@ -129,12 +129,11 @@ export default function CustomerLayout() {
         {!dataReady ? (
           <BootstrapSkeleton />
         ) : (
-          <AnimatePresence mode="wait">
+          <AnimatePresence>
             <motion.div
               key={activeTab}
-              initial={{ opacity: 0, y: 8  }}
-              animate={{ opacity: 1, y: 0  }}
-              exit={{   opacity: 0, y: -6  }}
+              initial={{ opacity: 0, y: 8 }}
+              animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.18 }}
             >
               <ActiveView />

@@ -75,12 +75,11 @@ export default function AdminLayout() {
       <AdminSidebar activeTab={activeTab} onTabChange={setActiveTab} />
 
       <main className="flex-1 overflow-auto max-h-screen">
-        <AnimatePresence mode="wait">
+        <AnimatePresence>
           <motion.div
             key={activeTab}
             initial={{ opacity: 0, y: 10 }}
             animate={{ opacity: 1, y: 0  }}
-            exit={{   opacity: 0, y: -6  }}
             transition={{ duration: 0.2 }}
           >
             <ActiveView />

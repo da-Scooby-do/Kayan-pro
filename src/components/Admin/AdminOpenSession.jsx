@@ -42,7 +42,7 @@ function Steps({ current }) {
 }
 
 // ── Step 1: Pick a customer ───────────────────────────────────
-function StepCustomer({ selected, onSelect }) {
+function StepCustomer({ selected, onSelect, inviterId, inviterInfo, onPickInviter }) {
   const { loadCustomers, checkCustomerSession } = useKayan()
   const customers = useKayanStore(s => s.customers)
   const customersLoading = useKayanStore(s => s.customersLoading)
@@ -518,7 +518,8 @@ function StepConfirm({ customer, seatId, rooms, seats, inviterId, inviterInfo })
 }
 
 // ── Main Modal ────────────────────────────────────────────────
-export default function AdminOpenSession({ onClose, onSuccess }) {
+// initialSeatId: when set, skips seat-selection step and pre-selects the seat.
+export default function AdminOpenSession({ onClose, onSuccess, initialSeatId = null }) {
   const { handleOpenSession, handleOpenInvitationSession, loadSeats, getInviterInfo } = useKayan()
   const profile = useKayanStore(s => s.profile)
   const rooms = useKayanStore(s => s.rooms)
@@ -526,7 +527,7 @@ export default function AdminOpenSession({ onClose, onSuccess }) {
 
   const [step, setStep] = useState(1)
   const [customer, setCustomer] = useState(null)
-  const [seatId, setSeatId] = useState(null)
+  const [seatId, setSeatId] = useState(initialSeatId)
   const [loading, setLoading] = useState(false)
   // Invitation
   const [inviterId,    setInviterId]    = useState(null)  // subscriber giving the invitation
@@ -536,6 +537,12 @@ export default function AdminOpenSession({ onClose, onSuccess }) {
   useEffect(() => { loadSeats() }, []) // eslint-disable-line
 
   const canNext = step === 1 ? !!customer : step === 2 ? !!seatId : true
+
+  // When seat is pre-selected and customer clicks Next on step 1, jump to confirm
+  const handleNext = () => {
+    if (step === 1 && initialSeatId) { onSelectCustomer(customer); return }
+    setStep(s => s + 1)
+  }
 
   // When inviter is picked, load their invitation info
   const pickInviter = async (inviterCustomer) => {
@@ -576,10 +583,22 @@ export default function AdminOpenSession({ onClose, onSuccess }) {
     }
   }
 
+  // If a seat was pre-selected from the floor plan, skip step 2 and go straight to confirm.
+  const onSelectCustomer = (c) => {
+    setCustomer(c)
+    setStep(initialSeatId ? 3 : 2)
+  }
+
+  // Back navigation: if seat was pre-selected, step 3 goes back to step 1 (skip step 2).
+  const goBack = () => {
+    if (step === 2) setStep(1)
+    else if (step === 3) setStep(initialSeatId ? 1 : 2)
+  }
+
   const VIEW = {
     1: <StepCustomer
       selected={customer}
-      onSelect={c => { setCustomer(c); setStep(2) }}
+      onSelect={onSelectCustomer}
       inviterId={inviterId}
       inviterInfo={inviterInfo}
       onPickInviter={pickInviter}
@@ -588,9 +607,9 @@ export default function AdminOpenSession({ onClose, onSuccess }) {
       selectedSeatId={seatId}
       onSelect={s => { setSeatId(s.id); setStep(3) }}
     />,
-    3: <StepConfirm 
-         customer={customer} seatId={seatId} rooms={rooms} seats={seats} 
-         inviterId={inviterId} inviterInfo={inviterInfo} 
+    3: <StepConfirm
+         customer={customer} seatId={seatId} rooms={rooms} seats={seats}
+         inviterId={inviterId} inviterInfo={inviterInfo}
        />,
   }
 
@@ -653,7 +672,7 @@ export default function AdminOpenSession({ onClose, onSuccess }) {
           <div className="flex gap-3 mt-7 pt-5 border-t border-white/[0.05]">
             {step > 1 ? (
               <button
-                onClick={() => setStep(s => s - 1)}
+                onClick={goBack}
                 className="btn-ghost flex-1"
                 disabled={loading}
               >
@@ -667,7 +686,7 @@ export default function AdminOpenSession({ onClose, onSuccess }) {
 
             {step < 3 ? (
               <button
-                onClick={() => setStep(s => s + 1)}
+                onClick={handleNext}
                 disabled={!canNext}
                 className="btn-gold flex-[2] disabled:opacity-40 disabled:cursor-not-allowed"
               >
