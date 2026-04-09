@@ -25,6 +25,14 @@ export default function CustomerMenu() {
   const filteredMenu = menu.filter(m => m.category === activeCategory)
   const hasSession   = !!mySession?.id
 
+  // BUG-07 FIX: Reset to first available category when menu loads (avoids empty screen
+  // if 'hot' category doesn't exist or has no items)
+  useEffect(() => {
+    if (categories.length > 0 && !categories.includes(activeCategory)) {
+      setActiveCategory(categories[0])
+    }
+  }, [menu]) // eslint-disable-line
+
   const onPlaceOrder = async () => {
     if (!hasSession) return
     await handlePlaceOrder(mySession.id, cart)

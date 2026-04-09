@@ -20,11 +20,14 @@ export function useAuthBoot() {
 
   useEffect(() => {
     let mounted = true
+    // BUG-01 FIX: Track whether the initial boot has been handled to prevent
+    // double-processing when both getSession() and INITIAL_SESSION event fire.
+    let booted = false
 
     // Safety net: if Supabase auth lock hangs (common on mobile/slow connections),
     // force-release the loading state after 8 seconds so the app never freezes.
     const hangGuard = setTimeout(() => {
-      if (mounted) {
+      if (mounted && !booted) {
         console.warn('Kayan: auth timed out — forcing loading=false')
         setUser(null)
         setProfile(null)
@@ -33,7 +36,8 @@ export function useAuthBoot() {
     }, 8000)
 
     supabase.auth.getSession().then(({ data: { session } }) => {
-      if (!mounted) return
+      if (!mounted || booted) return  // skip if state-change listener already handled it
+      booted = true
       clearTimeout(hangGuard)
       const authUser = session?.user ?? null
       setUser(authUser)
@@ -41,8 +45,13 @@ export function useAuthBoot() {
     })
 
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
-      async (_event, session) => {
+      async (event, session) => {
         if (!mounted) return
+
+        // Skip INITIAL_SESSION if getSession() already completed boot first
+        if (event === 'INITIAL_SESSION' && booted) return
+
+        booted = true
         clearTimeout(hangGuard)
         const authUser = session?.user ?? null
         setUser(authUser)

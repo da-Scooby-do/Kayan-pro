@@ -184,13 +184,19 @@ function PlanCard({ plan, index }) {
           <span className="text-[9px] text-kayan-muted">دعوة</span>
         </div>
 
-        {/* Features */}
+        {/* BUG-08 FIX: plan.features column doesn't exist — use hardcoded benefit text */}
         <div className="flex-1">
-          {plan.features?.slice(0, isVip ? 3 : 2).map((f, i) => (
-            <p key={i} className="text-[10px] text-kayan-sub flex items-center gap-1">
-              <span className="text-kayan-gold text-[8px]">✦</span>{f}
+          <p className="text-[10px] text-kayan-sub flex items-center gap-1">
+            <span className="text-kayan-gold text-[8px]">❆</span>Stay covered every visit
+          </p>
+          <p className="text-[10px] text-kayan-sub flex items-center gap-1">
+            <span className="text-kayan-gold text-[8px]">❆</span>Orders billed separately
+          </p>
+          {isVip && (
+            <p className="text-[10px] text-kayan-sub flex items-center gap-1">
+              <span className="text-kayan-gold text-[8px]">❆</span>VIP priority seating
             </p>
-          ))}
+          )}
         </div>
       </div>
 

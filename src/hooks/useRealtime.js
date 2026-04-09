@@ -26,6 +26,8 @@ function playNotificationSound() {
 
 export function useAdminRealtime() {
   const { addOrder, patchOrder, patchSeat, setHasNewOrder, showToast } = useKayanStore()
+  // BUG-13 FIX: Need loadActiveSessions to refresh session list on realtime events
+  const { loadActiveSessions } = useKayan()
   const orderRef = useRef(null)
   const seatRef = useRef(null)
   const sessionRef = useRef(null)
@@ -42,7 +44,11 @@ export function useAdminRealtime() {
       (updatedOrder) => { patchOrder(updatedOrder) }
     )
     seatRef.current = subscribeToSeats((s) => { patchSeat(s) })
-    sessionRef.current = subscribeToSessions(() => { }, () => { })
+    // BUG-13 FIX: Session callbacks now reload active sessions on any INSERT or UPDATE
+    sessionRef.current = subscribeToSessions(
+      () => { loadActiveSessions() },
+      () => { loadActiveSessions() }
+    )
 
     return () => {
       orderRef.current?.unsubscribe()
@@ -60,11 +66,20 @@ export function useCustomerSessionWatch(userId) {
   const mySession = useKayanStore(s => s.mySession)
   const setMySession = useKayanStore(s => s.setMySession)
   const showToast = useKayanStore(s => s.showToast)
+  // BUG-22 FIX: Need clearCart so stale cart items don't persist into a new session
+  const clearCart = useKayanStore(s => s.clearCart)
 
   const channelRef = useRef(null)
   const pollRef = useRef(null)
   const prevSession = useRef(null)
   const checkingRef = useRef(false) // prevent overlapping polls
+
+  // BUG-18 FIX: Initialize prevSession.current from the current store state
+  // so that when the component first loads with an active session,
+  // the "session opened" toast doesn't fire falsely on the first poll.
+  useEffect(() => {
+    if (mySession?.id) prevSession.current = mySession.id
+  }, []) // eslint-disable-line
 
   useEffect(() => {
     if (!userId) return
@@ -76,6 +91,7 @@ export function useCustomerSessionWatch(userId) {
         const session = await loadMySession(userId)
 
         if (!prevSession.current && session?.id) {
+          // Transition: no session → session (genuinely new check-in)
           prevSession.current = session.id
           await loadMyOrders(session.id)
           showToast('✅ Your session is open! You can now order.', 'ok')
@@ -83,7 +99,10 @@ export function useCustomerSessionWatch(userId) {
         }
 
         if (prevSession.current && !session) {
+          // Transition: session → no session (checked out)
           prevSession.current = null
+          // BUG-22 FIX: Clear stale cart items when session ends
+          clearCart?.()
           showToast('👋 Your session has ended. Thanks for visiting!', 'info')
         }
 
@@ -117,6 +136,7 @@ export function useCustomerSessionWatch(userId) {
 
         if (payload.eventType === 'UPDATE' && row.status === 'checked_out') {
           setMySession(null)
+          clearCart?.()  // BUG-22 FIX
           showToast('👋 Session ended. Thanks for visiting!', 'info')
         }
       })

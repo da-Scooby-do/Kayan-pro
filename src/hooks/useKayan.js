@@ -15,6 +15,11 @@ import {
   fetchActiveSessions,
   fetchMyActiveSession,
   fetchMenu,
+  fetchAllMenuItems,
+  toggleMenuItemAvailability,
+  addMenuItem,
+  editMenuItem,
+  deleteMenuItem,
   fetchPendingOrders,
   fetchSessionOrders,
   fetchCustomers,
@@ -84,7 +89,7 @@ export function useKayan() {
     }
   }, []) // eslint-disable-line react-hooks/exhaustive-deps
 
-  // ── Menu ────────────────────────────────────────────────────
+  // ── Menu ────────────────────────────────────────────
 
   const loadMenu = useCallback(async () => {
     try {
@@ -93,6 +98,59 @@ export function useKayan() {
       return menu
     } catch (err) {
       store.showToast(`Failed to load menu: ${err.message}`, 'error')
+    }
+  }, []) // eslint-disable-line react-hooks/exhaustive-deps
+
+  // BUG-05+06 FIX: Admin menu management moved into hook (no direct supabase in components)
+  const loadAllMenu = useCallback(async () => {
+    try {
+      const menu = await fetchAllMenuItems()
+      return menu
+    } catch (err) {
+      store.showToast(`Failed to load menu: ${err.message}`, 'error')
+      return []
+    }
+  }, []) // eslint-disable-line react-hooks/exhaustive-deps
+
+  const handleToggleMenuAvailability = useCallback(async (item) => {
+    try {
+      await toggleMenuItemAvailability(item.id, !item.is_available)
+      store.showToast(`${item.name} is now ${!item.is_available ? 'Available' : 'Out of Stock'}`, 'ok')
+    } catch (err) {
+      store.showToast(`Failed to update ${item.name}: ${err.message}`, 'error')
+      throw err
+    }
+  }, []) // eslint-disable-line react-hooks/exhaustive-deps
+
+  const handleAddMenuItem = useCallback(async (itemData) => {
+    try {
+      const item = await addMenuItem(itemData)
+      store.showToast(`✓ ${item.name} added to menu`, 'ok')
+      return item
+    } catch (err) {
+      store.showToast(`Failed to add item: ${err.message}`, 'error')
+      throw err
+    }
+  }, []) // eslint-disable-line react-hooks/exhaustive-deps
+
+  const handleEditMenuItem = useCallback(async (id, updates) => {
+    try {
+      const item = await editMenuItem(id, updates)
+      store.showToast(`✓ ${item.name} updated`, 'ok')
+      return item
+    } catch (err) {
+      store.showToast(`Failed to update item: ${err.message}`, 'error')
+      throw err
+    }
+  }, []) // eslint-disable-line react-hooks/exhaustive-deps
+
+  const handleDeleteMenuItem = useCallback(async (item) => {
+    try {
+      await deleteMenuItem(item.id)
+      store.showToast(`${item.name} removed from menu`, 'info')
+    } catch (err) {
+      store.showToast(`Failed to delete item: ${err.message}`, 'error')
+      throw err
     }
   }, []) // eslint-disable-line react-hooks/exhaustive-deps
 
@@ -441,6 +499,7 @@ export function useKayan() {
     loadRooms,
     loadSeats,
     loadMenu,
+    loadAllMenu,
     loadCustomers,
     checkCustomerSession,
     loadActiveSessions,
@@ -455,6 +514,11 @@ export function useKayan() {
     handleCheckout,
     getLiveBill,
     handleUpdateOrderStatus,
+    // Admin menu management (BUG-05+06)
+    handleToggleMenuAvailability,
+    handleAddMenuItem,
+    handleEditMenuItem,
+    handleDeleteMenuItem,
     // Customer actions
     handlePlaceOrder,
     // Subscriptions

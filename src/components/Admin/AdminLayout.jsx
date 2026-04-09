@@ -21,11 +21,14 @@ const VIEWS = {
   debts:         AdminDebts,
 }
 
-// ── Admin presence heartbeat ──────────────────────────────────
-// Pings Supabase every 60s so the owner can see who's online.
-// Also marks offline on unmount (tab close / sign out).
+// BUG-10 FIX: Guard presence heartbeat — silently disabled if RPCs don't exist
+// To fully disable, set ENABLE_PRESENCE = false
+const ENABLE_PRESENCE = true
+
 function useAdminPresence() {
   useEffect(() => {
+    if (!ENABLE_PRESENCE) return
+
     const ping = async () => {
       try {
         await supabase.rpc('ping_admin_presence')

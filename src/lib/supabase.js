@@ -289,6 +289,59 @@ export async function fetchMenu() {
   return data ?? []
 }
 
+/** Admin: fetch ALL menu items (including unavailable ones). */
+export async function fetchAllMenuItems() {
+  const { data, error } = await supabase
+    .from('menu_items')
+    .select('*')
+    .order('category')
+    .order('sort_order')
+  if (error) throw error
+  return data ?? []
+}
+
+/** Admin: toggle a menu item's availability. */
+export async function toggleMenuItemAvailability(itemId, isAvailable) {
+  const { data, error } = await supabase
+    .from('menu_items')
+    .update({ is_available: isAvailable, updated_at: new Date().toISOString() })
+    .eq('id', itemId)
+    .select().single()
+  if (error) throw error
+  return data
+}
+
+/** Admin: add a new menu item. */
+export async function addMenuItem({ name, name_ar, emoji, category, price, sort_order }) {
+  const { data, error } = await supabase
+    .from('menu_items')
+    .insert({ name, name_ar, emoji, category, price, sort_order: sort_order ?? 99, is_available: true })
+    .select().single()
+  if (error) throw error
+  return data
+}
+
+/** Admin: edit an existing menu item. */
+export async function editMenuItem(itemId, updates) {
+  const { data, error } = await supabase
+    .from('menu_items')
+    .update({ ...updates, updated_at: new Date().toISOString() })
+    .eq('id', itemId)
+    .select().single()
+  if (error) throw error
+  return data
+}
+
+/** Admin: delete a menu item. */
+export async function deleteMenuItem(itemId) {
+  const { error } = await supabase
+    .from('menu_items')
+    .delete()
+    .eq('id', itemId)
+  if (error) throw error
+}
+
+
 // ═══════════════════════════════════════════════════════════
 //  ORDERS
 // ═══════════════════════════════════════════════════════════
@@ -559,19 +612,42 @@ export async function useInvitation(inviterId) {
   return data
 }
 
+/**
+ * BUG-02 FIX: Compensating rollback — restores 1 invitation if open_session fails
+ * after use_invitation already decremented the count.
+ * NOTE: This is best-effort. A proper atomic solution requires merging the decrement
+ * into the open_session DB function.
+ */
+async function restoreInvitation(inviterId) {
+  try {
+    await supabase.rpc('restore_invitation', { p_inviter_id: inviterId })
+  } catch {
+    // Silent — if rollback fails, log for manual reconciliation
+    console.error('[Kayan] CRITICAL: Invitation decrement could not be rolled back for', inviterId)
+  }
+}
+
 export async function openInvitationSession({ userId, seatId, packageId = 1, adminId, inviterId }) {
+  // Step 1: Decrement the invitation count
   const invResult = await useInvitation(inviterId)
   if (!invResult?.ok) {
     throw new Error(invResult?.reason ?? 'No invitations remaining')
   }
+
+  // Step 2: Open the session (BUG-03 FIX: removed invalid p_inviter_id from open_session)
   const { data, error } = await supabase.rpc('open_session', {
     p_user_id:    userId,
     p_seat_id:    seatId,
     p_package_id: packageId,
     p_admin_id:   adminId ?? null,
-    p_inviter_id: inviterId,
   })
-  if (error) throw error
+
+  if (error) {
+    // BUG-02 FIX: Compensate by restoring the invitation credit
+    await restoreInvitation(inviterId)
+    throw error
+  }
+
   return { session: data, invitationsRemaining: invResult.remaining }
 }
 

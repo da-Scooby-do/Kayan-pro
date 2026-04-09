@@ -142,9 +142,9 @@ export default function CustomerLayout() {
         )}
       </main>
 
-      {/* Bottom nav */}
-      <nav className="glass border-t border-kayan-border fixed bottom-0 left-0 right-0
-                      flex z-[60]" style={{ maxWidth: 540, margin: '0 auto' }}>
+      {/* Bottom nav — BUG-19 FIX: use left:50%+translateX for centering on fixed elements */}
+      <nav className="glass border-t border-kayan-border fixed bottom-0 flex z-[60]"
+           style={{ left: '50%', transform: 'translateX(-50%)', width: '100%', maxWidth: 540 }}>
         {TABS.map(tab => {
           const isActive = activeTab === tab.id
           return (

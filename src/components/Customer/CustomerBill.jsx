@@ -4,6 +4,15 @@ import { useKayan } from '@/hooks/useKayan'
 import useKayanStore from '@/store/useKayanStore'
 import { ORDER_STATUS, BILLING, ago } from '@/constants'
 
+// BUG-14 FIX: Format decimal hours as “Xh Ym” for user-friendly display
+function fmtHours(decimalHours) {
+  const h = Math.floor(decimalHours)
+  const m = Math.round((decimalHours - h) * 60)
+  if (h === 0) return `${m}m`
+  if (m === 0) return `${h}h`
+  return `${h}h ${m}m`
+}
+
 // Tick every 60s to refresh the "hours so far" display
 function useTick() {
   const [, set] = useState(0)
@@ -41,11 +50,12 @@ export default function CustomerBill() {
         // Fallback: compute client-side so "Calculating..." never hangs
         const pkg = mySession.package ?? {}
         const rate = pkg.hourly_rate ?? 15
-        const cap = pkg.daily_cap ?? 75
-        const capH = pkg.cap_hours ?? 6
+        const cap = pkg.daily_cap ?? BILLING.DAILY_CAP
+        const capH = pkg.cap_hours ?? BILLING.CAP_HOURS
         const hours = (Date.now() - new Date(mySession.check_in)) / 3_600_000
         const capped = hours > capH
-        const stay = capped ? cap : Math.max(rate, Math.ceil(hours * rate))
+        // BUG-16 FIX: Use BILLING.MIN_CHARGE instead of raw rate to stay in sync with constants
+        const stay = capped ? cap : Math.max(BILLING.MIN_CHARGE, Math.ceil(hours * rate))
         const orders = mySession.orders_total ?? 0
         setLiveBill({
           hours_stayed: +hours.toFixed(2),
@@ -85,7 +95,8 @@ export default function CustomerBill() {
   const seatNum = mySession.seat?.seat_number
 
   const billRows = bill ? [
-    { label: 'Stay duration', value: `${bill.hours_stayed}h` },
+    // BUG-14 FIX: Use fmtHours() to show '1h 45m' instead of '1.75h'
+    { label: 'Stay duration', value: fmtHours(bill.hours_stayed) },
     { label: 'Hourly rate', value: `${pkg.hourly_rate ?? BILLING.HOURLY_RATE} EGP/hr` },
     {
       label: 'Stay cost', value: `${bill.stay_cost} EGP`,

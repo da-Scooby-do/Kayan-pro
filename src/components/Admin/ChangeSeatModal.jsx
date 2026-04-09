@@ -26,13 +26,13 @@ export default function ChangeSeatModal({ occupiedSeat, onClose }) {
   // Resolve who's sitting in the clicked seat
   useEffect(() => {
     getSessionBySeat(occupiedSeat.id).then(s => {
-      console.log('[Kayan] ChangeSeat — session for seat', occupiedSeat.id, ':', s)
       setSession(s)
       setLoading(false)
     })
     // Default target room to current room
     setTargetRoom(occupiedSeat.room_id)
   }, [occupiedSeat.id]) // eslint-disable-line
+
 
   const currentRoom = rooms.find(r => r.id === targetRoom)
   const roomSeats = (seats[targetRoom] ?? [])

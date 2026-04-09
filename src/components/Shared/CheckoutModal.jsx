@@ -58,7 +58,8 @@ export default function CheckoutModal({ session, onClose, onSuccess }) {
 
   const rows = bill ? [
     { label: 'Stay duration',   value: `${bill.hours_stayed}h`            },
-    { label: 'Rate',            value: '15 EGP / hr'                      },
+    // BUG-15 FIX: Use actual package rate, not hardcoded '15 EGP / hr'
+    { label: 'Rate',            value: `${session?.package?.hourly_rate ?? 15} EGP / hr` },
     { label: 'Stay cost',       value: `${bill.stay_cost} EGP`,
       note: bill.is_capped ? 'daily cap applied' : null, noteColor: '#22C55E' },
     { label: 'Drinks & snacks', value: `${bill.orders_total} EGP`          },

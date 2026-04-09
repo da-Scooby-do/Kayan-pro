@@ -439,11 +439,14 @@ function StepSeat({ selectedSeatId, onSelect }) {
 
 // ── Step 3: Confirm ───────────────────────────────────────────
 function StepConfirm({ customer, seatId, rooms, seats, inviterId, inviterInfo }) {
-  // Resolve seat + room names from IDs
-  const [roomId] = seatId?.split('-') ?? []
-  const room = rooms.find(r => r.id === Number(roomId))
-  const roomSeats = seats[Number(roomId)] ?? []
-  const seat = roomSeats.find(s => s.id === seatId)
+  // BUG-04 FIX: Don't split UUID to extract room ID — search all rooms' seats directly
+  let room = null
+  let seat = null
+  for (const r of rooms) {
+    const roomSeats = seats[r.id] ?? []
+    const found = roomSeats.find(s => s.id === seatId)
+    if (found) { room = r; seat = found; break }
+  }
 
   const usingInvitation = !!inviterId
   const remaining = inviterInfo?.invitations_remaining ?? null
@@ -477,9 +480,9 @@ function StepConfirm({ customer, seatId, rooms, seats, inviterId, inviterInfo })
           <span className="text-2xl">🪑</span>
           <div>
             <p className="font-semibold text-sm">
-              {room?.name} · Seat #{seat?.seat_number}
+              {room?.name ?? '—'} · Seat #{seat?.seat_number ?? '?'}
             </p>
-            <p className="text-xs text-kayan-muted">{room?.name_ar}</p>
+            <p className="text-xs text-kayan-muted">{room?.name_ar ?? ''}</p>
           </div>
         </div>
 
@@ -539,7 +542,10 @@ export default function AdminOpenSession({ onClose, onSuccess, initialSeatId = n
   const canNext = step === 1 ? !!customer : step === 2 ? !!seatId : true
 
   // When seat is pre-selected and customer clicks Next on step 1, jump to confirm
+  // BUG-17 FIX: Guard against advancing when no customer is selected
+  // (canNext already disables the button, but this prevents any edge case)
   const handleNext = () => {
+    if (!customer) return
     if (step === 1 && initialSeatId) { onSelectCustomer(customer); return }
     setStep(s => s + 1)
   }

@@ -18,6 +18,8 @@ export const ROOMS = [
   { id: 4, name: 'Room 4', ar: 'غرفة ٤', cap: 18, floor: 'First'  },
   { id: 5, name: 'Room 5', ar: 'غرفة ٥', cap: 15, floor: 'Second' },
   { id: 6, name: 'Roof ☀️', ar: 'السطح',  cap: 18, floor: 'Roof'   },
+  // BUG-11 FIX: Added Room 7 to match RoomFloorPlan layout mapping
+  { id: 7, name: 'Room 7', ar: 'غرفة ٧', cap: 12, floor: 'Ground' },
 ]
 
 // ── Menu categories ───────────────────────────────────────────

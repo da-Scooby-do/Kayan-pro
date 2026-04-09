@@ -29,10 +29,20 @@ export default function AdminOrders() {
 
   return (
     <div className="p-7 max-w-3xl animate-fade-in">
-      <div className="mb-6">
-        <p className="text-[9px] text-kayan-muted tracking-[3px] mb-1 uppercase">Admin · Real-time</p>
-        <h2 className="font-display text-3xl font-bold mb-1">Order Queue</h2>
-        <p className="text-kayan-sub text-sm">Live orders from active sessions</p>
+      {/* BUG-23 FIX: Header with manual refresh button */}
+      <div className="flex items-start justify-between flex-wrap gap-4 mb-6">
+        <div>
+          <p className="text-[9px] text-kayan-muted tracking-[3px] mb-1 uppercase">Admin · Real-time</p>
+          <h2 className="font-display text-3xl font-bold mb-1">Order Queue</h2>
+          <p className="text-kayan-sub text-sm">Live orders from active sessions</p>
+        </div>
+        <button
+          onClick={() => loadPendingOrders()}
+          disabled={ordersLoading}
+          className="btn-ghost text-xs px-3 py-2 flex items-center gap-1.5 disabled:opacity-50"
+        >
+          {ordersLoading ? '⧐ Loading…' : '↻ Refresh'}
+        </button>
       </div>
 
       <div className="grid grid-cols-3 gap-3 mb-6">

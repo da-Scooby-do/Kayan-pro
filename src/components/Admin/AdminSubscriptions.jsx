@@ -11,6 +11,11 @@ function CancelSubModal({ customer, onClose, onDone }) {
   const [error,   setError]   = useState(null)
 
   const confirm = async () => {
+    // BUG-09 FIX: Guard against undefined sub_id which could cancel ALL subscriptions
+    if (!customer.sub_id) {
+      setError('Cannot cancel: subscription ID is missing.')
+      return
+    }
     setLoading(true)
     setError(null)
     try {
@@ -100,6 +105,11 @@ function ActivateModal({ customer, onClose, onDone }) {
 
   const confirm = async () => {
     if (!selectedPlan) return
+    // BUG-24 FIX: Guard against missing user_id before activating subscription
+    if (!customer.user_id) {
+      console.error('[Kayan] ActivateModal: customer.user_id is missing', customer)
+      return
+    }
     setLoading(true)
     try {
       await handleActivateSub({

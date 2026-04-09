@@ -1,5 +1,6 @@
 import { useState } from 'react'
 import { useAuth } from '@/hooks/useAuth'
+import { supabase } from '@/lib/supabase'
 
 export default function LoginPage() {
   const { handleSignIn, handleSignUp } = useAuth()
@@ -42,6 +43,73 @@ export default function LoginPage() {
   }
 
   const isSignup = mode === 'signup'
+
+  // BUG-21 FIX: Forgot password state + handler
+  const [forgotMode, setForgotMode] = useState(false)
+  const [forgotEmail, setForgotEmail] = useState('')
+  const [forgotLoading, setForgotLoading] = useState(false)
+  const [forgotSent, setForgotSent] = useState(false)
+  const [forgotError, setForgotError] = useState(null)
+
+  const sendReset = async e => {
+    e.preventDefault()
+    if (!forgotEmail.trim()) { setForgotError('Please enter your email address.'); return }
+    setForgotLoading(true); setForgotError(null)
+    const { error } = await supabase.auth.resetPasswordForEmail(forgotEmail.trim(), {
+      redirectTo: window.location.origin + '/reset-password',
+    })
+    setForgotLoading(false)
+    if (error) { setForgotError(error.message) }
+    else { setForgotSent(true) }
+  }
+
+  // Render forgot password overlay
+  if (forgotMode) {
+    return (
+      <div className="min-h-screen bg-kayan-bg text-kayan-text font-sans
+                      flex flex-col items-center justify-center p-5 relative overflow-hidden">
+        <div className="absolute inset-0 pointer-events-none"
+          style={{ background: 'radial-gradient(ellipse 70% 60% at 50% 40%, rgba(201,168,76,0.07) 0%, transparent 70%)' }} />
+
+        <div className="relative z-10 w-full max-w-sm glass rounded-3xl border border-kayan-border p-6">
+          <button onClick={() => { setForgotMode(false); setForgotSent(false); setForgotError(null) }}
+            className="text-kayan-muted hover:text-kayan-sub text-xs mb-5 flex items-center gap-1.5
+                       cursor-pointer bg-transparent border-none">
+            ← Back to Sign In
+          </button>
+
+          {forgotSent ? (
+            <div className="text-center py-4">
+              <div className="text-4xl mb-4">📧</div>
+              <h3 className="font-display text-xl font-bold mb-2">Check your email</h3>
+              <p className="text-kayan-sub text-sm">
+                A password reset link has been sent to <strong>{forgotEmail}</strong>.
+              </p>
+              <p className="text-kayan-muted text-xs mt-3">Didn't receive it? Check your spam folder.</p>
+            </div>
+          ) : (
+            <>
+              <h3 className="font-display text-2xl font-bold mb-1">Reset Password</h3>
+              <p className="text-kayan-sub text-sm mb-5">Enter your email and we'll send a reset link.</p>
+              <form onSubmit={sendReset} className="space-y-3">
+                <input type="email" placeholder="Email address"
+                  value={forgotEmail} onChange={e => setForgotEmail(e.target.value)}
+                  required className="kayan-input" />
+                {forgotError && (
+                  <p className="text-red-400 text-xs flex items-start gap-1.5">
+                    <span>⚠</span>{forgotError}
+                  </p>
+                )}
+                <button type="submit" disabled={forgotLoading} className="btn-gold w-full disabled:opacity-50">
+                  {forgotLoading ? 'Sending…' : 'Send Reset Link →'}
+                </button>
+              </form>
+            </>
+          )}
+        </div>
+      </div>
+    )
+  }
 
   return (
     <div className="min-h-screen bg-kayan-bg text-kayan-text font-sans
@@ -153,6 +221,16 @@ export default function LoginPage() {
               : (isSignup ? 'Create Account →' : 'Enter Kayan →')
             }
           </button>
+
+          {/* BUG-21 FIX: Forgot password link */}
+          {!isSignup && (
+            <button type="button"
+              onClick={() => { setForgotMode(true); setForgotEmail(form.email) }}
+              className="w-full text-center text-[10px] text-kayan-muted hover:text-kayan-sub
+                         mt-2 cursor-pointer bg-transparent border-none transition-colors">
+              Forgot your password?
+            </button>
+          )}
         </form>
 
         {isSignup && (
@@ -163,7 +241,7 @@ export default function LoginPage() {
       </div>
 
       <p className="mt-7 text-[9px] text-kayan-muted tracking-[4px] relative z-10">
-        KAYAN © 2025 · ALL RIGHTS RESERVED
+        KAYAN © {new Date().getFullYear()} · ALL RIGHTS RESERVED
       </p>
     </div>
   )
