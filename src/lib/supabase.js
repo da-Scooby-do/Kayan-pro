@@ -35,24 +35,40 @@ export const supabase = createClient(SUPABASE_URL, SUPABASE_ANON, {
  * Sign up a new customer.
  * Creates the auth user; the `handle_new_user` DB trigger
  * automatically inserts the profile row.
+ *
+ * Phone strategy (two-layer):
+ *  1. Store phone in auth user_metadata — always works, never blocked by RLS.
+ *  2. Try an immediate profile update (works when email confirmation is OFF).
+ *     If it fails silently (email confirmation ON → user not yet authenticated),
+ *     loadProfileInto() will sync the phone from metadata on first real sign-in.
  */
 export async function signUp({ email, password, fullName, phone }) {
-  // Step 1: create auth user
+  const cleanPhone = phone?.trim() || null
+
+  // Step 1: create auth user — include phone in metadata as the reliable backup
   const { data, error } = await supabase.auth.signUp({
     email,
     password,
-    options: { data: { full_name: fullName, role: 'customer' } },
+    options: {
+      data: {
+        full_name: fullName,
+        role:      'customer',
+        phone:     cleanPhone,   // ← stored in auth.users.raw_user_meta_data
+      },
+    },
   })
   if (error) throw error
 
-  // Step 2: update the profile row with phone number
-  // The handle_new_user trigger creates the profile row immediately,
-  // but doesn't include phone — we update it right after signup.
-  if (data?.user?.id && phone) {
+  // Step 2: best-effort immediate profile update.
+  // Works when email confirmation is disabled (user is already authenticated).
+  // When confirmation is required this runs unauthenticated and RLS will block
+  // it — that's fine, loadProfileInto() handles the sync after real sign-in.
+  if (data?.user?.id && cleanPhone) {
     await supabase
       .from('profiles')
-      .update({ phone: phone.trim() })
+      .update({ phone: cleanPhone })
       .eq('id', data.user.id)
+    // Intentionally not throwing on error — phone sync is handled on sign-in
   }
 
   return data

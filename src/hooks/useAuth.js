@@ -6,6 +6,10 @@ import useKayanStore from '@/store/useKayanStore'
 // Retries up to 5 times with a 700ms gap to handle the race condition
 // where the handle_new_user DB trigger hasn't finished writing the
 // profile row by the time onAuthStateChange fires (new signups only).
+//
+// Also syncs phone from auth metadata → profiles table on first sign-in.
+// This fixes the case where email confirmation was required and the
+// unauthenticated update in signUp() was blocked by RLS.
 async function loadProfileInto(authUser, setProfile) {
   if (!authUser) { setProfile(null); return }
 
@@ -16,6 +20,18 @@ async function loadProfileInto(authUser, setProfile) {
     try {
       const profile = await fetchProfile(authUser.id)
       if (profile) {
+        // ── Phone sync ──────────────────────────────────────────
+        // If phone is missing from the profile but exists in auth metadata,
+        // patch it now. The user is authenticated here so RLS passes.
+        const metaPhone = authUser.user_metadata?.phone ?? null
+        if (!profile.phone && metaPhone) {
+          await supabase
+            .from('profiles')
+            .update({ phone: metaPhone })
+            .eq('id', authUser.id)
+          profile.phone = metaPhone   // update the local copy immediately
+        }
+        // ────────────────────────────────────────────────────────
         setProfile(profile)
         return
       }
