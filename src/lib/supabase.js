@@ -71,15 +71,19 @@ export async function signOut() {
   if (error) throw error
 }
 
-/** Fetch the profile row for a given auth user id. */
+/** Fetch the profile row for a given auth user id.
+ *  Uses maybeSingle() so 0 rows returns null instead of a 406 error.
+ *  This matters for brand-new accounts where the handle_new_user trigger
+ *  may not have finished writing the row yet.
+ */
 export async function fetchProfile(userId) {
   const { data, error } = await supabase
     .from('profiles')
     .select('*')
     .eq('id', userId)
-    .single()
+    .maybeSingle()          // null on 0 rows — never throws a 406
   if (error) throw error
-  return data
+  return data               // null if profile not created yet
 }
 
 /** Update display name or phone for the current user. */
