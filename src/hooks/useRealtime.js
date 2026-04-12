@@ -149,6 +149,21 @@ export function useCustomerSessionWatch(userId) {
   }, [userId]) // eslint-disable-line
 }
 
+// ── Customer seat map watcher ────────────────────────────────
+// Subscribes to seat changes so the map updates live without refresh.
+// Called unconditionally in CustomerLayout (runs for every customer).
+export function useCustomerSeatsRealtime() {
+  const patchSeat = useKayanStore(s => s.patchSeat)
+  const channelRef = useRef(null)
+
+  useEffect(() => {
+    channelRef.current = subscribeToSeats((updatedSeat) => {
+      patchSeat(updatedSeat)
+    })
+    return () => { channelRef.current?.unsubscribe() }
+  }, []) // eslint-disable-line
+}
+
 export function useCustomerRealtime(sessionId) {
   const { patchMyOrder, showToast } = useKayanStore()
   const channelRef = useRef(null)

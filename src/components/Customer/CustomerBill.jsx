@@ -25,8 +25,13 @@ function useTick() {
 export default function CustomerBill() {
   const { loadMyOrders, getLiveBill } = useKayan()
   const mySession = useKayanStore(s => s.mySession)
-  const myOrders = useKayanStore(s => s.myOrders)
+  const myOrders  = useKayanStore(s => s.myOrders)
   const myOrdersLoading = useKayanStore(s => s.myOrdersLoading)
+  // BUG-3 FIX: Read outstanding_debt from profile so it shows on the bill
+  const profile   = useKayanStore(s => s.profile)
+
+  // BUG-2 FIX: subscription sessions don't pay for stay time
+  const isSub = mySession?.is_subscription_session === true
 
   const [liveBill, setLiveBill] = useState(null)
 
@@ -45,25 +50,47 @@ export default function CustomerBill() {
       // Try DB function first (most accurate)
       const dbBill = await getLiveBill(mySession.id)
       if (dbBill) {
-        setLiveBill(dbBill)
+        // BUG-2 FIX: override stay_cost/total_cost for subscription sessions
+        if (isSub) {
+          setLiveBill({
+            ...dbBill,
+            stay_cost:   0,
+            total_cost:  dbBill.orders_total,
+            is_capped:   false,
+          })
+        } else {
+          setLiveBill(dbBill)
+        }
       } else {
         // Fallback: compute client-side so "Calculating..." never hangs
         const pkg = mySession.package ?? {}
-        const rate = pkg.hourly_rate ?? 15
-        const cap = pkg.daily_cap ?? BILLING.DAILY_CAP
-        const capH = pkg.cap_hours ?? BILLING.CAP_HOURS
         const hours = (Date.now() - new Date(mySession.check_in)) / 3_600_000
-        const capped = hours > capH
-        // BUG-16 FIX: Use BILLING.MIN_CHARGE instead of raw rate to stay in sync with constants
-        const stay = capped ? cap : Math.max(BILLING.MIN_CHARGE, Math.ceil(hours * rate))
         const orders = mySession.orders_total ?? 0
-        setLiveBill({
-          hours_stayed: +hours.toFixed(2),
-          stay_cost: stay,
-          orders_total: orders,
-          total_cost: stay + orders,
-          is_capped: capped,
-        })
+
+        // BUG-2 FIX: subscription sessions pay 0 for stay
+        if (isSub) {
+          setLiveBill({
+            hours_stayed:  +hours.toFixed(2),
+            stay_cost:     0,
+            orders_total:  orders,
+            total_cost:    orders,
+            is_capped:     false,
+          })
+        } else {
+          const rate   = pkg.hourly_rate ?? 15
+          const cap    = pkg.daily_cap   ?? BILLING.DAILY_CAP
+          const capH   = pkg.cap_hours   ?? BILLING.CAP_HOURS
+          const capped = hours > capH
+          // BUG-16 FIX: Use BILLING.MIN_CHARGE to stay in sync with constants
+          const stay = capped ? cap : Math.max(BILLING.MIN_CHARGE, Math.ceil(hours * rate))
+          setLiveBill({
+            hours_stayed:  +hours.toFixed(2),
+            stay_cost:     stay,
+            orders_total:  orders,
+            total_cost:    stay + orders,
+            is_capped:     capped,
+          })
+        }
       }
     }
 
@@ -73,6 +100,7 @@ export default function CustomerBill() {
   }, [mySession?.id]) // eslint-disable-line react-hooks/exhaustive-deps
 
   // ── No active session ──────────────────────────────────────
+  const outstandingDebt = profile?.outstanding_debt ?? 0
   if (!mySession) {
     return (
       <div className="p-5 animate-fade-in">
@@ -80,6 +108,21 @@ export default function CustomerBill() {
           <h2 className="font-display text-2xl font-bold mb-1">My Bill</h2>
           <p className="text-kayan-sub text-sm">Current session overview</p>
         </div>
+
+        {/* BUG-3 FIX: show outstanding debt even when no active session */}
+        {outstandingDebt > 0 && (
+          <div className="glass rounded-2xl border border-red-500/30 bg-red-500/[0.04] p-5 mb-4">
+            <div className="flex items-center gap-2 mb-2">
+              <span className="w-2 h-2 rounded-full bg-red-400 flex-shrink-0" />
+              <span className="text-xs text-red-400 font-semibold tracking-wider uppercase">
+                Outstanding Debt
+              </span>
+            </div>
+            <p className="text-4xl font-bold text-red-400 font-display">{outstandingDebt}</p>
+            <p className="text-kayan-sub text-sm mt-1">Egyptian Pounds — please settle at the counter.</p>
+          </div>
+        )}
+
         <div className="glass rounded-2xl border border-white/[0.05] p-10 text-center">
           <p className="text-4xl mb-4">🧾</p>
           <p className="text-kayan-sub text-sm">No active session.</p>
@@ -95,19 +138,34 @@ export default function CustomerBill() {
   const seatNum = mySession.seat?.seat_number
 
   const billRows = bill ? [
-    // BUG-14 FIX: Use fmtHours() to show '1h 45m' instead of '1.75h'
-    { label: 'Stay duration', value: fmtHours(bill.hours_stayed) },
-    { label: 'Hourly rate', value: `${pkg.hourly_rate ?? BILLING.HOURLY_RATE} EGP/hr` },
-    {
-      label: 'Stay cost', value: `${bill.stay_cost} EGP`,
-      note: bill.is_capped ? '(capped ✓)' : null, noteColor: '#22C55E'
-    },
+    // BUG-2 FIX: hide stay rows for subscription sessions
+    ...(!isSub ? [
+      // BUG-14 FIX: Use fmtHours() to show '1h 45m' instead of '1.75h'
+      { label: 'Stay duration', value: fmtHours(bill.hours_stayed) },
+      { label: 'Hourly rate', value: `${pkg.hourly_rate ?? BILLING.HOURLY_RATE} EGP/hr` },
+      {
+        label: 'Stay cost', value: `${bill.stay_cost} EGP`,
+        note: bill.is_capped ? '(capped ✓)' : null, noteColor: '#22C55E'
+      },
+    ] : [
+      { label: 'Subscription session', value: '✦ Stay free', valueColor: '#C9A84C' },
+    ]),
     { label: 'Drinks & snacks', value: `${bill.orders_total} EGP` },
+    // BUG-3 FIX: show outstanding debt in bill if any
+    ...(outstandingDebt > 0 ? [
+      { label: 'Previous debt', value: `${outstandingDebt} EGP`, valueColor: '#EF4444', note: '(unpaid)', noteColor: '#EF4444' },
+    ] : []),
     { divider: true },
     {
-      label: 'Total', value: `${bill.total_cost} EGP`,
+      label: 'Session total', value: `${bill.total_cost} EGP`,
       bold: true, valueColor: '#C9A84C'
     },
+    ...(outstandingDebt > 0 ? [
+      {
+        label: 'Total incl. debt', value: `${bill.total_cost + outstandingDebt} EGP`,
+        bold: true, valueColor: '#EF4444'
+      },
+    ] : []),
   ] : []
 
   return (

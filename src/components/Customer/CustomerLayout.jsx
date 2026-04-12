@@ -6,7 +6,8 @@ import CustomerBill         from './CustomerBill'
 import CustomerSubscription from './CustomerSubscription'
 import { useKayan }                from '@/hooks/useKayan'
 import { useCustomerRealtime,
-         useCustomerSessionWatch } from '@/hooks/useRealtime'
+         useCustomerSessionWatch,
+         useCustomerSeatsRealtime } from '@/hooks/useRealtime'
 import { useAuth }                 from '@/hooks/useAuth'
 import useKayanStore               from '@/store/useKayanStore'
 
@@ -83,6 +84,9 @@ export default function CustomerLayout() {
 
   // ── 3. Watch for order status updates
   useCustomerRealtime(mySession?.id)
+
+  // ── 4. Watch for seat occupancy changes (live map) — BUG-1 FIX
+  useCustomerSeatsRealtime()
 
   // Show content once bootstrap done OR rooms already exist
   const dataReady  = bootstrapDone || rooms.length > 0
