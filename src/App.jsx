@@ -1,4 +1,4 @@
-import { useEffect } from 'react'
+import { useEffect, useRef } from 'react'
 import { useAuthBoot } from '@/hooks/useAuth'
 import useKayanStore from '@/store/useKayanStore'
 import { supabase } from '@/lib/supabase'
@@ -18,14 +18,19 @@ function App() {
   // Boot the Supabase auth listener — once, here only
   useAuthBoot()
 
-  // Auto sign-out if auth finished but profile never loaded.
-  // Prevents an infinite spinner when the DB row is missing or unreachable.
+  // Auto sign-out if profile never arrives after a grace period.
+  // Uses a 4 s timer so normal sign-in (profile loads in <1 s) is never affected.
+  const signOutTimer = useRef(null)
   useEffect(() => {
-    if (!authLoading && user && !profile) {
-      console.warn('Kayan: profile not found after auth — signing out')
-      supabase.auth.signOut()
+    clearTimeout(signOutTimer.current)
+    if (user && !profile) {
+      signOutTimer.current = setTimeout(() => {
+        console.warn('Kayan: profile still null after grace period — signing out')
+        supabase.auth.signOut()
+      }, 4000)
     }
-  }, [authLoading, user, profile])
+    return () => clearTimeout(signOutTimer.current)
+  }, [user, profile])
 
   // Sync URL with auth state so the browser bar is never stuck on /login
   useEffect(() => {
