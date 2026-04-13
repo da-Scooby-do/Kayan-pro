@@ -13,8 +13,8 @@ import useKayanStore from '@/store/useKayanStore'
 async function loadProfileInto(authUser, setProfile) {
   if (!authUser) { setProfile(null); return }
 
-  const MAX_ATTEMPTS = 4
-  const DELAY_MS     = 400
+  const MAX_ATTEMPTS = 6
+  const DELAY_MS     = 500
 
   for (let attempt = 1; attempt <= MAX_ATTEMPTS; attempt++) {
     try {
