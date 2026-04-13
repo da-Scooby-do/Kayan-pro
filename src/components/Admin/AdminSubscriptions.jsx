@@ -97,11 +97,16 @@ function ActivateModal({ customer, onClose, onDone }) {
   const plans   = useKayanStore(s => s.subscriptionPlans)
   const profile = useKayanStore(s => s.profile)
 
-  const [selectedPlan, setSelectedPlan] = useState(null)
-  const [notes,        setNotes]        = useState('')
-  const [loading,      setLoading]      = useState(false)
+  const [selectedPlan,  setSelectedPlan]  = useState(null)
+  const [notes,         setNotes]         = useState('')
+  const [loading,       setLoading]       = useState(false)
+  const [plansLoading,  setPlansLoading]  = useState(false)
 
-  useEffect(() => { loadSubscriptionPlans() }, []) // eslint-disable-line
+  useEffect(() => {
+    if (plans.length > 0) return // already loaded by bootstrapAdmin
+    setPlansLoading(true)
+    loadSubscriptionPlans().finally(() => setPlansLoading(false))
+  }, []) // eslint-disable-line
 
   const confirm = async () => {
     if (!selectedPlan) return
@@ -163,6 +168,16 @@ function ActivateModal({ customer, onClose, onDone }) {
             Select Plan
           </p>
           <div className="space-y-2 mb-5">
+            {plansLoading && (
+              <div className="text-center py-6 text-kayan-muted text-xs animate-pulse">
+                Loading plans…
+              </div>
+            )}
+            {!plansLoading && plans.length === 0 && (
+              <div className="text-center py-6 text-red-400 text-xs">
+                ⚠ No plans found. Add plans in Supabase first.
+              </div>
+            )}
             {plans.map(plan => (
               <div
                 key={plan.id}

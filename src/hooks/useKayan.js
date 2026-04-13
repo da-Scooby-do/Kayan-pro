@@ -478,8 +478,9 @@ export function useKayan() {
       loadActiveSessions(),
       loadPendingOrders(),
       loadDebts(),
+      loadSubscriptionPlans(), // needed for ActivateModal plan list
     ])
-  }, [loadRooms, loadSeats, loadActiveSessions, loadPendingOrders, loadDebts])
+  }, [loadRooms, loadSeats, loadActiveSessions, loadPendingOrders, loadDebts, loadSubscriptionPlans])
 
   /** Load everything the customer app needs on mount. */
   const bootstrapCustomer = useCallback(async (userId) => {
