@@ -1,4 +1,12 @@
 node_modules
+dist
 .env
 .vercel
 .env*.local
+
+# Vite dev-server cache
+vite.config.js.timestamp-*
+
+# Generated files
+kayan-qr.png
+*.sql
