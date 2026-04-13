@@ -8,7 +8,8 @@ import { useKayan }                from '@/hooks/useKayan'
 import { useCustomerRealtime,
          useCustomerSessionWatch,
          useCustomerSeatsRealtime,
-         useCustomerSubscriptionWatch } from '@/hooks/useRealtime'
+         useCustomerSubscriptionWatch,
+         useCustomerMenuWatch } from '@/hooks/useRealtime'
 import { useAuth }                 from '@/hooks/useAuth'
 import useKayanStore               from '@/store/useKayanStore'
 
@@ -89,7 +90,11 @@ export default function CustomerLayout() {
   // ── 4. Watch for seat occupancy changes (live map) — BUG-1 FIX
   useCustomerSeatsRealtime()
 
-  // ── 5. Watch for subscription activation by admin ────────────
+  // ── 5. Watch for menu changes (availability toggle, add, delete) ──
+  // Reloads menu instantly so unavailable items vanish without refresh.
+  useCustomerMenuWatch()
+
+  // ── 6. Watch for subscription activation by admin ────────────
   // Refreshes mySubscription + mySession when admin activates a sub
   // after the customer is already in the app (no page refresh needed).
   useCustomerSubscriptionWatch(user?.id)

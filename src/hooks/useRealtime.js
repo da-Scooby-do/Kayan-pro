@@ -164,6 +164,27 @@ export function useCustomerSeatsRealtime() {
   }, []) // eslint-disable-line
 }
 
+// ── Customer menu watcher ────────────────────────────────────
+// Reloads the menu whenever admin adds, removes or toggles an item.
+// Ensures unavailable items disappear from the customer view instantly.
+export function useCustomerMenuWatch() {
+  const { loadMenu } = useKayan()
+  const channelRef = useRef(null)
+
+  useEffect(() => {
+    channelRef.current = supabase
+      .channel('kayan-menu-watch')
+      .on('postgres_changes', {
+        event: '*', schema: 'public', table: 'menu_items',
+      }, () => {
+        loadMenu()
+      })
+      .subscribe()
+
+    return () => { channelRef.current?.unsubscribe() }
+  }, []) // eslint-disable-line
+}
+
 // ── Customer subscription watcher ───────────────────────────
 // Listens for INSERT/UPDATE on user_subscriptions for this user.
 // When admin activates a subscription after the customer has already
