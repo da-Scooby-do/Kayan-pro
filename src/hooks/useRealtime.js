@@ -164,6 +164,35 @@ export function useCustomerSeatsRealtime() {
   }, []) // eslint-disable-line
 }
 
+// ── Customer subscription watcher ───────────────────────────
+// Listens for INSERT/UPDATE on user_subscriptions for this user.
+// When admin activates a subscription after the customer has already
+// mounted the app, this refreshes mySubscription AND mySession so the
+// bill immediately shows 0 stay cost.
+export function useCustomerSubscriptionWatch(userId) {
+  const { loadMySubscription, loadMySession } = useKayan()
+  const channelRef = useRef(null)
+
+  useEffect(() => {
+    if (!userId) return
+
+    channelRef.current = supabase
+      .channel(`kayan-sub-watch-${userId}`)
+      .on('postgres_changes', {
+        event: '*', schema: 'public', table: 'user_subscriptions',
+        filter: `user_id=eq.${userId}`,
+      }, async () => {
+        // Refresh subscription data in store
+        await loadMySubscription(userId)
+        // Refresh session — it may now have is_subscription_session=true
+        await loadMySession(userId)
+      })
+      .subscribe()
+
+    return () => { channelRef.current?.unsubscribe() }
+  }, [userId]) // eslint-disable-line
+}
+
 export function useCustomerRealtime(sessionId) {
   const { patchMyOrder, showToast } = useKayanStore()
   const channelRef = useRef(null)

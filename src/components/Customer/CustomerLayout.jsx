@@ -7,7 +7,8 @@ import CustomerSubscription from './CustomerSubscription'
 import { useKayan }                from '@/hooks/useKayan'
 import { useCustomerRealtime,
          useCustomerSessionWatch,
-         useCustomerSeatsRealtime } from '@/hooks/useRealtime'
+         useCustomerSeatsRealtime,
+         useCustomerSubscriptionWatch } from '@/hooks/useRealtime'
 import { useAuth }                 from '@/hooks/useAuth'
 import useKayanStore               from '@/store/useKayanStore'
 
@@ -88,6 +89,11 @@ export default function CustomerLayout() {
   // ── 4. Watch for seat occupancy changes (live map) — BUG-1 FIX
   useCustomerSeatsRealtime()
 
+  // ── 5. Watch for subscription activation by admin ────────────
+  // Refreshes mySubscription + mySession when admin activates a sub
+  // after the customer is already in the app (no page refresh needed).
+  useCustomerSubscriptionWatch(user?.id)
+
   // Show content once bootstrap done OR rooms already exist
   const dataReady  = bootstrapDone || rooms.length > 0
   const ActiveView = VIEWS[activeTab]
@@ -129,7 +135,7 @@ export default function CustomerLayout() {
       </header>
 
       {/* Main content */}
-      <main className="flex-1 overflow-auto" style={{ paddingBottom: 68 }}>
+      <main className="flex-1 overflow-auto" style={{ paddingBottom: 76 }}>
         {!dataReady ? (
           <BootstrapSkeleton />
         ) : (
@@ -146,30 +152,33 @@ export default function CustomerLayout() {
         )}
       </main>
 
-      {/* Bottom nav — BUG-19 FIX: use left:50%+translateX for centering on fixed elements */}
-      <nav className="glass border-t border-kayan-border fixed bottom-0 flex z-[60]"
-           style={{ left: '50%', transform: 'translateX(-50%)', width: '100%', maxWidth: 540 }}>
+      {/* Bottom nav — bigger tap targets, active gold pill under icon */}
+      <nav className="customer-bottom-nav"
+           style={{ left: '50%', transform: 'translateX(-50%)', maxWidth: 540 }}>
         {TABS.map(tab => {
           const isActive = activeTab === tab.id
           return (
             <button
               key={tab.id}
               onClick={() => setActiveTab(tab.id)}
-              className={`flex-1 py-3 flex flex-col items-center gap-1 cursor-pointer
-                border-none bg-transparent transition-colors duration-200 relative
-                ${isActive ? 'text-kayan-gold' : 'text-kayan-muted hover:text-kayan-sub'}`}
-              style={{ borderBottom: `2px solid ${isActive ? '#C9A84C' : 'transparent'}` }}
+              className={`customer-nav-btn ${isActive ? 'active' : ''}`}
             >
-              <span className="text-lg">{tab.icon}</span>
-              <span className="text-[8px] tracking-widest">{tab.label}</span>
+              {/* Active gold pill sits behind the icon */}
+              {isActive && (
+                <motion.span
+                  layoutId="nav-pill"
+                  className="customer-nav-pill"
+                  transition={{ type: 'spring', stiffness: 420, damping: 38 }}
+                />
+              )}
+              <span className="customer-nav-icon">{tab.icon}</span>
+              <span className="customer-nav-label">{tab.label}</span>
 
               {/* Cart badge */}
               {tab.id === 'menu' && count > 0 && (
                 <motion.span
                   initial={{ scale: 0 }} animate={{ scale: 1 }}
-                  className="absolute top-1 right-[22%] bg-kayan-gold text-kayan-bg
-                             text-[8px] font-bold rounded-full w-4 h-4
-                             flex items-center justify-center"
+                  className="customer-nav-badge"
                 >
                   {count}
                 </motion.span>
@@ -177,7 +186,7 @@ export default function CustomerLayout() {
 
               {/* Bill live dot */}
               {tab.id === 'bill' && mySession && !isActive && (
-                <span className="absolute top-1.5 right-[26%] w-1.5 h-1.5 rounded-full bg-green-400"
+                <span className="customer-nav-dot"
                       style={{ animation: 'pulse2 2s ease-in-out infinite' }} />
               )}
             </button>

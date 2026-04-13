@@ -13,8 +13,8 @@ import useKayanStore from '@/store/useKayanStore'
 async function loadProfileInto(authUser, setProfile) {
   if (!authUser) { setProfile(null); return }
 
-  const MAX_ATTEMPTS = 5
-  const DELAY_MS     = 700
+  const MAX_ATTEMPTS = 4
+  const DELAY_MS     = 400
 
   for (let attempt = 1; attempt <= MAX_ATTEMPTS; attempt++) {
     try {
@@ -70,7 +70,7 @@ export function useAuthBoot() {
         setProfile(null)
         setAuthLoading(false)
       }
-    }, 8000)
+    }, 4000)
 
     supabase.auth.getSession().then(({ data: { session } }) => {
       if (!mounted || booted) return  // skip if state-change listener already handled it

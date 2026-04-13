@@ -31,16 +31,10 @@ function App() {
     }
   }, [user, authLoading])
 
-  // 1. Still loading auth
-  if (authLoading) return (
-    <div className="min-h-screen bg-kayan-bg flex items-center justify-center">
-      <div className="animate-pulse text-kayan-gold tracking-widest text-[10px] uppercase">
-        كيان ...
-      </div>
-    </div>
-  )
-
-  // 2. Not logged in
+  // 1. No user — show login page immediately (even while auth is still resolving).
+  //    This eliminates the blank loading screen on mobile cold-start.
+  //    If the user IS already logged in, Supabase resolves in <300 ms and
+  //    `user` gets set, so the login page is never actually visible.
   if (!user) return (
     <>
       <LoginPage />
@@ -48,11 +42,12 @@ function App() {
     </>
   )
 
-  // 3. Logged in but profile not yet fetched
+  // 2. User confirmed but profile not yet loaded (fast DB round-trip).
+  //    Only reached by returning logged-in users — acceptable brief spinner.
   if (!profile) return (
     <div className="min-h-screen bg-kayan-bg flex items-center justify-center flex-col gap-4">
       <div className="animate-pulse text-kayan-gold uppercase tracking-widest text-[10px]">
-        Loading…
+        كيان ...
       </div>
       <button
         onClick={() => supabase.auth.signOut()}

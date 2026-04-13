@@ -178,6 +178,564 @@
   background-size: 60px 60px;
 }
 
+/* ═══════════════════════════════════════════════════════════
+   CUSTOMER MENU — mobile-optimised, tactile, scrollable cats
+   ═══════════════════════════════════════════════════════════ */
+
+/* Horizontally-scrollable category strip */
+.menu-cat-scroll {
+  overflow-x: auto;
+  overflow-y: hidden;
+  -webkit-overflow-scrolling: touch;
+  scrollbar-width: none;
+  padding: 0 20px 14px;
+}
+.menu-cat-scroll::-webkit-scrollbar { display: none; }
+
+.menu-cat-inner {
+  display: flex;
+  gap: 8px;
+  width: max-content;
+}
+
+.menu-cat-btn {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  padding: 8px 14px;
+  border-radius: 999px;
+  border: 1px solid rgba(255,255,255,0.07);
+  background: transparent;
+  cursor: pointer;
+  color: rgba(138,138,168,1);
+  white-space: nowrap;
+  transition: background .18s ease, border-color .18s ease, color .18s ease;
+  -webkit-tap-highlight-color: transparent;
+}
+.menu-cat-btn.active {
+  background: rgba(201,168,76,0.10);
+  border-color: rgba(201,168,76,0.40);
+  color: #C9A84C;
+}
+.menu-cat-emoji { font-size: 14px; }
+.menu-cat-label { font-size: 12px; font-weight: 600; text-transform: capitalize; }
+.menu-cat-count {
+  font-size: 10px;
+  font-weight: 700;
+  background: rgba(255,255,255,0.06);
+  border-radius: 999px;
+  padding: 1px 6px;
+  min-width: 18px;
+  text-align: center;
+}
+.menu-cat-btn.active .menu-cat-count {
+  background: rgba(201,168,76,0.15);
+  color: #C9A84C;
+}
+
+/* Menu item card */
+.menu-item-card {
+  position: relative;
+  background: #0e0e1f;
+  border: 1px solid rgba(255,255,255,0.05);
+  border-radius: 20px;
+  padding: 16px 12px 14px;
+  text-align: center;
+  cursor: pointer;
+  transition: border-color .18s ease, transform .12s ease;
+  -webkit-tap-highlight-color: transparent;
+  overflow: hidden;
+}
+.menu-item-card:active:not(.locked) { transform: scale(0.97); }
+.menu-item-card.in-cart {
+  border-color: rgba(201,168,76,0.40);
+  background: rgba(201,168,76,0.04);
+}
+.menu-item-card.locked { opacity: 0.45; cursor: not-allowed; }
+
+/* Badge: shows qty in top-right corner */
+.menu-badge {
+  position: absolute;
+  top: 8px;
+  right: 8px;
+  width: 22px;
+  height: 22px;
+  background: #C9A84C;
+  color: #07070E;
+  font-size: 11px;
+  font-weight: 800;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  line-height: 1;
+}
+
+.menu-item-emoji { font-size: 40px; margin-bottom: 8px; line-height: 1; }
+.menu-item-name  { font-size: 13px; font-weight: 600; color: #F0EBE0; line-height: 1.2; margin-bottom: 2px; }
+.menu-item-name-ar { font-size: 10px; color: rgba(80,80,104,1); margin-bottom: 8px; }
+
+.menu-item-price {
+  display: inline-block;
+  font-size: 12px;
+  font-weight: 700;
+  color: #C9A84C;
+  background: rgba(201,168,76,0.10);
+  border-radius: 999px;
+  padding: 3px 10px;
+  margin-bottom: 10px;
+}
+
+.menu-item-controls { min-height: 32px; display: flex; align-items: center; justify-content: center; }
+
+.menu-add-btn {
+  font-size: 11px;
+  color: #C9A84C;
+  border: 1px solid rgba(201,168,76,0.30);
+  background: rgba(201,168,76,0.07);
+  border-radius: 999px;
+  padding: 5px 14px;
+  cursor: pointer;
+  transition: background .15s ease;
+  -webkit-tap-highlight-color: transparent;
+}
+.menu-add-btn:active { background: rgba(201,168,76,0.18); }
+.menu-add-btn.disabled { opacity: 0.35; cursor: not-allowed; }
+
+.menu-qty-row { display: flex; align-items: center; gap: 8px; }
+.menu-qty-btn {
+  width: 30px;
+  height: 30px;
+  border-radius: 50%;
+  border: 1px solid;
+  font-size: 16px;
+  font-weight: 700;
+  line-height: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: background .13s ease, transform .1s ease;
+  -webkit-tap-highlight-color: transparent;
+}
+.menu-qty-btn:active { transform: scale(0.9); }
+.menu-qty-btn.minus {
+  background: rgba(239,68,68,0.12);
+  border-color: rgba(239,68,68,0.30);
+  color: #f87171;
+}
+.menu-qty-btn.plus {
+  background: rgba(34,197,94,0.12);
+  border-color: rgba(34,197,94,0.30);
+  color: #4ade80;
+}
+.menu-qty-num {
+  width: 24px;
+  text-align: center;
+  font-size: 14px;
+  font-weight: 700;
+  color: #C9A84C;
+  font-variant-numeric: tabular-nums;
+}
+
+/* Cart bar */
+.cart-bar {
+  position: fixed;
+  left: 0; right: 0;
+  background: #0e0e1f;
+  border-top: 1px solid rgba(201,168,76,0.15);
+  z-index: 50;
+  max-width: 540px;
+  margin: 0 auto;
+}
+
+.cart-chips {
+  display: flex;
+  gap: 6px;
+  flex-wrap: wrap;
+  padding: 10px 16px 6px;
+}
+
+.cart-chip {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 11px;
+  color: rgba(138,138,168,1);
+  background: rgba(255,255,255,0.04);
+  border-radius: 999px;
+  padding: 4px 8px 4px 6px;
+}
+.cart-chip-qty { font-weight: 700; color: #F0EBE0; }
+.cart-chip-remove {
+  font-size: 13px;
+  color: rgba(80,80,104,1);
+  background: transparent;
+  border: none;
+  cursor: pointer;
+  padding: 0 0 0 2px;
+  line-height: 1;
+  transition: color .12s ease;
+}
+.cart-chip-remove:hover { color: #f87171; }
+
+.cart-cta-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 8px 16px 12px;
+  gap: 12px;
+}
+.cart-summary { display: flex; flex-direction: column; gap: 1px; }
+.cart-count   { font-size: 11px; color: rgba(138,138,168,1); }
+.cart-total   { font-size: 16px; font-weight: 700; color: #C9A84C; }
+.cart-order-btn { padding: 10px 22px !important; font-size: 13px !important; }
+
+/* ══ End Customer Menu ═══════════════════════════════════════ */
+
+/* ═══════════════════════════════════════════════════════════
+   CUSTOMER BOTTOM NAV — big tap targets, spring-animated pill
+   ═══════════════════════════════════════════════════════════ */
+
+.customer-bottom-nav {
+  position: fixed;
+  bottom: 0;
+  width: 100%;
+  display: flex;
+  align-items: stretch;
+  background: #0e0e1f;
+  border-top: 1px solid rgba(201,168,76,0.14);
+  z-index: 60;
+  /* safe area for phones with home bar */
+  padding-bottom: env(safe-area-inset-bottom, 0px);
+}
+
+.customer-nav-btn {
+  flex: 1;
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 3px;
+  /* min 64px tall — comfortable tap target */
+  min-height: 64px;
+  padding: 10px 4px;
+  border: none;
+  background: transparent;
+  cursor: pointer;
+  color: rgba(80,80,104,1);
+  transition: color .18s ease;
+  -webkit-tap-highlight-color: transparent;
+}
+.customer-nav-btn.active { color: #C9A84C; }
+
+/* The animated pill that slides under the active icon */
+.customer-nav-pill {
+  position: absolute;
+  top: 8px;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 40px;
+  height: 40px;
+  border-radius: 14px;
+  background: rgba(201,168,76,0.12);
+  border: 1px solid rgba(201,168,76,0.22);
+  pointer-events: none;
+}
+
+.customer-nav-icon  { font-size: 20px; position: relative; z-index: 1; }
+.customer-nav-label {
+  font-size: 8px;
+  letter-spacing: 0.12em;
+  font-weight: 600;
+  position: relative;
+  z-index: 1;
+}
+
+.customer-nav-badge {
+  position: absolute;
+  top: 6px;
+  right: calc(50% - 24px);
+  min-width: 16px;
+  height: 16px;
+  background: #C9A84C;
+  color: #07070E;
+  font-size: 9px;
+  font-weight: 800;
+  border-radius: 999px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0 3px;
+  z-index: 2;
+}
+
+.customer-nav-dot {
+  position: absolute;
+  top: 7px;
+  right: calc(50% - 22px);
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: #4ade80;
+  z-index: 2;
+}
+
+/* ══ End Customer Bottom Nav ══════════════════════════════════ */
+
+/* ═══════════════════════════════════════════════════════════
+   LOGIN PAGE — performance-first, compositor-only animations
+   NO backdrop-filter, NO filter:drop-shadow, NO max-height
+   ═══════════════════════════════════════════════════════════ */
+
+.login-screen {
+  min-height: 100dvh;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  background: #07070E;
+  position: relative;
+  overflow: hidden;
+  padding: 24px 20px 32px;
+}
+
+/* Static radial glow — painted once, no repaints */
+.login-bg {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  background:
+    radial-gradient(ellipse 80% 55% at 50% 35%, rgba(201,168,76,0.09) 0%, transparent 68%),
+    radial-gradient(ellipse 50% 40% at 50% 90%, rgba(201,168,76,0.04) 0%, transparent 60%);
+}
+
+.login-content {
+  position: relative;
+  z-index: 10;
+  width: 100%;
+  max-width: 400px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0;
+}
+
+/* Logo */
+.login-logo-wrap {
+  position: relative;
+  margin-bottom: 16px;
+  animation: loginFadeDown .5s cubic-bezier(.16,1,.3,1) both;
+}
+
+.login-logo {
+  width: 88px;
+  height: 88px;
+  border-radius: 50%;
+  object-fit: cover;
+  display: block;
+  /* box-shadow instead of filter:drop-shadow — no layer raster cost */
+  box-shadow: 0 0 0 1px rgba(201,168,76,0.25), 0 0 32px rgba(201,168,76,0.22);
+}
+
+.login-logo-glow {
+  position: absolute;
+  inset: -12px;
+  border-radius: 50%;
+  background: radial-gradient(circle, rgba(201,168,76,0.12) 0%, transparent 70%);
+  pointer-events: none;
+}
+
+.login-tagline {
+  font-size: 9px;
+  letter-spacing: 4px;
+  color: rgba(201,168,76,0.4);
+  margin-bottom: 24px;
+  text-align: center;
+  animation: loginFadeDown .5s .08s cubic-bezier(.16,1,.3,1) both;
+}
+
+/* Card — solid fill, NO backdrop-filter */
+.login-card {
+  width: 100%;
+  background: #0e0e1f;
+  border: 1px solid rgba(201,168,76,0.16);
+  border-radius: 24px;
+  padding: 24px 20px 20px;
+  animation: loginFadeUp .45s .1s cubic-bezier(.16,1,.3,1) both;
+}
+
+/* Tabs */
+.login-tabs {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  position: relative;
+  background: rgba(255,255,255,0.03);
+  border: 1px solid rgba(255,255,255,0.06);
+  border-radius: 12px;
+  overflow: hidden;
+  margin-bottom: 20px;
+  height: 42px;
+}
+
+.login-tab-pill {
+  position: absolute;
+  top: 3px; bottom: 3px;
+  left: 3px;
+  width: calc(50% - 3px);
+  background: rgba(201,168,76,0.14);
+  border: 1px solid rgba(201,168,76,0.28);
+  border-radius: 9px;
+  transition: transform .22s cubic-bezier(.16,1,.3,1);
+  pointer-events: none;
+  will-change: transform;
+}
+
+.login-tab-btn {
+  position: relative;
+  z-index: 1;
+  background: transparent;
+  border: none;
+  font-size: 13px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: color .2s ease;
+  color: rgba(255,255,255,0.3);
+  height: 100%;
+}
+.login-tab-btn.active { color: #C9A84C; }
+
+/* Form */
+.login-form { display: flex; flex-direction: column; gap: 10px; }
+
+/* Sign-up fields: grid-rows trick — triggers NO layout, only paint */
+.login-signup-fields {
+  display: grid;
+  transition: grid-template-rows .28s cubic-bezier(.16,1,.3,1);
+  overflow: hidden;
+}
+.login-signup-inner {
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  padding-bottom: 10px;
+}
+
+.login-fields-always { display: flex; flex-direction: column; gap: 10px; }
+
+/* Password wrapper */
+.login-pass-wrap { position: relative; }
+.login-show-btn {
+  position: absolute;
+  right: 14px;
+  top: 50%;
+  transform: translateY(-50%);
+  font-size: 9px;
+  font-weight: 700;
+  letter-spacing: .12em;
+  color: rgba(138,138,168,1);
+  background: transparent;
+  border: none;
+  cursor: pointer;
+  transition: color .15s ease;
+  padding: 6px 0;
+}
+.login-show-btn:hover { color: #C9A84C; }
+
+/* Input override — remove any focus-visible ring on mobile */
+.login-input-style {
+  font-size: 15px; /* prevents iOS zoom-on-focus (must be ≥16 on iOS, 15 on android) */
+}
+@supports (-webkit-touch-callout: none) {
+  /* iOS only */
+  .login-input-style { font-size: 16px; }
+}
+
+/* Submit button */
+.login-submit-btn {
+  margin-top: 2px;
+  height: 48px;
+  font-size: 13px;
+  border-radius: 14px !important;
+  letter-spacing: .06em;
+}
+
+/* Forgot password */
+.login-forgot-btn {
+  width: 100%;
+  text-align: center;
+  font-size: 11px;
+  color: rgba(80,80,104,1);
+  background: transparent;
+  border: none;
+  cursor: pointer;
+  padding: 4px 0 0;
+  transition: color .15s ease;
+}
+.login-forgot-btn:hover { color: rgba(138,138,168,1); }
+
+/* Error */
+.login-error {
+  font-size: 12px;
+  color: #f87171;
+  display: flex;
+  align-items: flex-start;
+  gap: 6px;
+  padding: 0 2px;
+}
+
+/* Privacy note */
+.login-privacy-note {
+  text-align: center;
+  font-size: 10px;
+  color: rgba(80,80,104,1);
+  margin-top: 12px;
+  line-height: 1.6;
+}
+
+/* Back button */
+.login-back-btn {
+  font-size: 11px;
+  color: rgba(80,80,104,1);
+  background: transparent;
+  border: none;
+  cursor: pointer;
+  margin-bottom: 16px;
+  padding: 0;
+  transition: color .15s ease;
+  display: block;
+}
+.login-back-btn:hover { color: rgba(138,138,168,1); }
+
+/* Sent icon */
+.login-sent-icon {
+  font-size: 40px;
+  margin-bottom: 12px;
+}
+
+/* Footer */
+.login-footer {
+  font-size: 8px;
+  letter-spacing: 4px;
+  color: rgba(80,80,104,0.7);
+  margin-top: 20px;
+  text-align: center;
+}
+
+/* Login page entry animations — transform+opacity only */
+@keyframes loginFadeUp {
+  from { opacity: 0; transform: translateY(18px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+@keyframes loginFadeDown {
+  from { opacity: 0; transform: translateY(-10px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+/* ══ End Login Page ══════════════════════════════════════════ */
+
 /* ── Animations ─────────────────────────────────────────── */
 
 /* Shimmer animation (for gold-text) */
