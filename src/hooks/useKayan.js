@@ -44,6 +44,10 @@ import {
   // Invitations
   openInvitationSession,
   fetchInviterInfo,
+  // Invitation codes
+  generateInvitationCode,
+  fetchMyInvitationCodes,
+  lookupInvitationCode,
 } from '@/lib/supabase'
 import useKayanStore from '@/store/useKayanStore'
 
@@ -467,6 +471,37 @@ export function useKayan() {
     } catch { return null }
   }, [])
 
+  // ── Invitation Codes ────────────────────────────────────────
+
+  /** Customer: generate a new invite code for their active subscription. */
+  const handleGenerateInviteCode = useCallback(async (inviterId, subId) => {
+    try {
+      const code = await generateInvitationCode(inviterId, subId)
+      store.showToast('✓ Invite code generated!', 'ok')
+      return code
+    } catch (err) {
+      store.showToast(`Failed to generate code: ${err.message}`, 'error')
+      throw err
+    }
+  }, []) // eslint-disable-line
+
+  /** Customer: load all invite codes they've ever generated. */
+  const loadMyInviteCodes = useCallback(async (inviterId) => {
+    try {
+      return await fetchMyInvitationCodes(inviterId)
+    } catch (err) {
+      store.showToast(`Failed to load codes: ${err.message}`, 'error')
+      return []
+    }
+  }, []) // eslint-disable-line
+
+  /** Admin: look up an invite code → returns inviter profile or null. */
+  const lookupInviteCode = useCallback(async (code) => {
+    try {
+      return await lookupInvitationCode(code)
+    } catch { return null }
+  }, []) // eslint-disable-line
+
   // ── Bootstrap helpers ───────────────────────────────────────
 
 
@@ -535,6 +570,10 @@ export function useKayan() {
     // Invitations
     handleOpenInvitationSession,
     getInviterInfo,
+    // Invitation codes
+    handleGenerateInviteCode,
+    loadMyInviteCodes,
+    lookupInviteCode,
     // Bootstrap
     bootstrapAdmin,
     bootstrapCustomer,

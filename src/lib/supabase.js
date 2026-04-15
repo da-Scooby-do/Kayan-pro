@@ -671,6 +671,49 @@ export async function openInvitationSession({ userId, seatId, packageId = 1, adm
   return { session: data, invitationsRemaining: invResult.remaining }
 }
 
+// ═══════════════════════════════════════════════════════════
+//  INVITATION CODES
+// ═══════════════════════════════════════════════════════════
+
+/** Subscriber: generate a new single-use invite code for their sub. */
+export async function generateInvitationCode(inviterId, subId) {
+  const { data, error } = await supabase
+    .from('invitation_codes')
+    .insert({ inviter_id: inviterId, sub_id: subId })
+    .select()
+    .single()
+  if (error) throw error
+  return data
+}
+
+/** Subscriber: fetch all codes they've ever generated. */
+export async function fetchMyInvitationCodes(inviterId) {
+  const { data, error } = await supabase
+    .from('invitation_codes')
+    .select('*')
+    .eq('inviter_id', inviterId)
+    .order('created_at', { ascending: false })
+  if (error) throw error
+  return data ?? []
+}
+
+/** Admin: look up an invite code → returns the inviter's profile + subscription info. */
+export async function lookupInvitationCode(code) {
+  const { data, error } = await supabase
+    .from('invitation_codes')
+    .select(`
+      id, code, used, expires_at, used_at,
+      inviter:profiles!inviter_id ( id, full_name, phone, username ),
+      sub:user_subscriptions!sub_id ( id, invitations_remaining, status )
+    `)
+    .eq('code', code.toLowerCase().trim())
+    .eq('used', false)
+    .gt('expires_at', new Date().toISOString())
+    .maybeSingle()
+  if (error) throw error
+  return data   // null if not found / expired / already used
+}
+
 export async function fetchInviterInfo(userId) {
   const { data, error } = await supabase
     .from('user_subscriptions')
