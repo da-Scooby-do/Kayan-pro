@@ -714,6 +714,34 @@ export async function lookupInvitationCode(code) {
   return data   // null if not found / expired / already used
 }
 
+/**
+ * Admin: apply an invitation to an already-open session at checkout time.
+ * - Decrements the inviter's invitation count
+ * - Sets is_subscription_session = true so stay cost becomes 0
+ */
+export async function applyInvitationToSession(sessionId, inviterId) {
+  // Step 1: decrement the inviter's count
+  const { data: invData, error: invErr } = await supabase.rpc('use_invitation', {
+    p_inviter_id: inviterId,
+  })
+  if (invErr) throw invErr
+  if (!invData?.ok) throw new Error(invData?.reason ?? 'No invitations remaining')
+
+  // Step 2: mark session so checkout calculates stay = 0
+  const { error: sessErr } = await supabase
+    .from('sessions')
+    .update({ is_subscription_session: true })
+    .eq('id', sessionId)
+    .eq('status', 'active')
+  if (sessErr) {
+    // Best-effort rollback of the invitation decrement
+    await supabase.rpc('restore_invitation', { p_inviter_id: inviterId }).catch(() => {})
+    throw sessErr
+  }
+
+  return { invitations_remaining: invData.remaining }
+}
+
 export async function fetchInviterInfo(userId) {
   const { data, error } = await supabase
     .from('user_subscriptions')

@@ -48,6 +48,7 @@ import {
   generateInvitationCode,
   fetchMyInvitationCodes,
   lookupInvitationCode,
+  applyInvitationToSession,
 } from '@/lib/supabase'
 import useKayanStore from '@/store/useKayanStore'
 
@@ -495,6 +496,22 @@ export function useKayan() {
     }
   }, []) // eslint-disable-line
 
+  /**
+   * Admin: apply an invitation to an open session at checkout time.
+   * Decrements the inviter's count and marks the session as subscription-based
+   * so checkout calculates stay = 0.
+   */
+  const handleApplyInvitation = useCallback(async (sessionId, inviterId) => {
+    try {
+      const result = await applyInvitationToSession(sessionId, inviterId)
+      store.showToast('✦ Invitation applied — stay is now free', 'ok')
+      return result
+    } catch (err) {
+      store.showToast(`Invitation failed: ${err.message}`, 'error')
+      throw err
+    }
+  }, []) // eslint-disable-line
+
   /** Admin: look up an invite code → returns inviter profile or null. */
   const lookupInviteCode = useCallback(async (code) => {
     try {
@@ -574,6 +591,7 @@ export function useKayan() {
     handleGenerateInviteCode,
     loadMyInviteCodes,
     lookupInviteCode,
+    handleApplyInvitation,
     // Bootstrap
     bootstrapAdmin,
     bootstrapCustomer,
