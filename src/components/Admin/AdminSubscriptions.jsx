@@ -91,6 +91,146 @@ function CancelSubModal({ customer, onClose, onDone }) {
   )
 }
 
+// ── Extend subscription modal ────────────────────────────────
+// Available for 10 and 20-day plans when days_remaining is low
+const EXTEND_OPTIONS = [
+  { days: 5,  price: 300, label: '+5 Days',  labelAr: '+٥ أيام',  threshold: 6  },
+  { days: 10, price: 500, label: '+10 Days', labelAr: '+١٠ أيام', threshold: 11 },
+]
+
+function ExtendSubModal({ customer, onClose, onDone }) {
+  const { handleExtendSub } = useKayan()
+  const [selected, setSelected] = useState(null)
+  const [loading,  setLoading]  = useState(false)
+  const [error,    setError]    = useState(null)
+
+  const available = EXTEND_OPTIONS.filter(
+    opt => customer.days_remaining <= opt.threshold
+  )
+
+  const confirm = async () => {
+    if (!selected) return
+    setLoading(true); setError(null)
+    try {
+      await handleExtendSub({
+        userId:    customer.user_id,
+        extraDays: selected.days,
+        amount:    selected.price,
+      })
+      onDone()
+      onClose()
+    } catch (err) {
+      setError(err?.message ?? 'Extension failed. Please try again.')
+    } finally { setLoading(false) }
+  }
+
+  return (
+    <AnimatePresence>
+      <motion.div
+        initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
+        className="fixed inset-0 z-[8000] flex items-end sm:items-center justify-center p-0 sm:p-5"
+        style={{ background: 'rgba(7,7,14,0.9)', backdropFilter: 'blur(12px)' }}
+        onClick={onClose}
+      >
+        <motion.div
+          initial={{ opacity: 0, y: 30 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: 20 }}
+          className="glass border border-kayan-border rounded-t-3xl sm:rounded-3xl
+                     w-full sm:max-w-sm p-6"
+          onClick={e => e.stopPropagation()}
+        >
+          {/* Header */}
+          <div className="flex items-start justify-between mb-5">
+            <div>
+              <p className="text-[8px] tracking-[3px] text-kayan-muted uppercase mb-1">
+                Extend Subscription
+              </p>
+              <h3 className="font-display text-xl font-bold">{customer.full_name}</h3>
+              <p className="text-xs text-kayan-muted mt-0.5">
+                {customer.plan_name} · <span className="text-kayan-gold">{customer.days_remaining}d remaining</span>
+              </p>
+            </div>
+            <button onClick={onClose}
+              className="w-8 h-8 rounded-full bg-white/[0.05] hover:bg-white/[0.09]
+                         flex items-center justify-center text-kayan-sub text-sm
+                         transition-colors cursor-pointer border-none">✕</button>
+          </div>
+
+          {available.length === 0 ? (
+            <div className="text-center py-6 text-kayan-muted text-sm">
+              <p>No extensions available.</p>
+              <p className="text-xs mt-1">Customer needs ≤11 days remaining.</p>
+            </div>
+          ) : (
+            <>
+              <p className="text-xs font-semibold text-kayan-sub tracking-wider uppercase mb-3">
+                Choose Extension
+              </p>
+              <div className="space-y-2 mb-5">
+                {available.map(opt => (
+                  <div key={opt.days}
+                    onClick={() => setSelected(opt)}
+                    className={`flex items-center justify-between p-4 rounded-xl border
+                      cursor-pointer transition-all duration-200
+                      ${selected?.days === opt.days
+                        ? 'bg-kayan-gold/10 border-kayan-gold/45'
+                        : 'bg-white/[0.025] border-white/[0.06] hover:border-kayan-gold/25'
+                      }`}
+                  >
+                    <div>
+                      <p className="text-sm font-semibold">
+                        {opt.labelAr}
+                        <span className="text-kayan-muted text-xs ml-2">{opt.label}</span>
+                      </p>
+                      <p className="text-[10px] text-kayan-muted mt-0.5">
+                        Available when ≤{opt.threshold} days left
+                      </p>
+                    </div>
+                    <p className="font-display text-xl font-bold text-kayan-gold">
+                      {opt.price} <span className="text-xs text-kayan-sub">EGP</span>
+                    </p>
+                  </div>
+                ))}
+              </div>
+
+              {/* Confirm summary */}
+              {selected && (
+                <div className="rounded-xl p-3 bg-kayan-gold/[0.06] border border-kayan-gold/20 mb-4">
+                  <p className="text-xs text-kayan-sub mb-1">Collect cash payment of</p>
+                  <p className="font-display text-2xl font-bold text-kayan-gold">
+                    {selected.price} EGP
+                  </p>
+                  <p className="text-[10px] text-kayan-muted mt-1">
+                    {selected.label} added · new total: {customer.days_remaining + selected.days} days remaining
+                  </p>
+                </div>
+              )}
+
+              {error && (
+                <div className="mb-3 px-3 py-2 rounded-lg bg-red-500/10 border border-red-500/25">
+                  <p className="text-[10px] text-red-400">⚠ {error}</p>
+                </div>
+              )}
+
+              <div className="flex gap-3">
+                <button onClick={onClose} className="btn-ghost flex-1" disabled={loading}>
+                  Cancel
+                </button>
+                <button
+                  onClick={confirm}
+                  disabled={!selected || loading}
+                  className="btn-gold flex-[2] disabled:opacity-40 disabled:cursor-not-allowed"
+                >
+                  {loading ? 'Extending…' : `✓ Extend & Collect ${selected?.price ?? ''} EGP`}
+                </button>
+              </div>
+            </>
+          )}
+        </motion.div>
+      </motion.div>
+    </AnimatePresence>
+  )
+}
+
 // ── Activate subscription modal ───────────────────────────────
 function ActivateModal({ customer, onClose, onDone }) {
   const { handleActivateSub, loadSubscriptionPlans } = useKayan()
@@ -263,6 +403,7 @@ export default function AdminSubscriptions() {
   const customerSubs = useKayanStore(s => s.customerSubs)
 
   const [activateTarget, setActivateTarget] = useState(null)
+  const [extendTarget,   setExtendTarget]   = useState(null)   // for extend modal
   const [cancelTarget,   setCancelTarget]   = useState(null)   // for cancel modal
   const [filter, setFilter]   = useState('all')  // all | active | none
   const [search, setSearch]   = useState('')
@@ -394,6 +535,19 @@ export default function AdminSubscriptions() {
                             ✉ {c.invitations_remaining} inv
                           </p>
                         </div>
+                        {/* Extend button — 10/20-day plans, days_remaining ≤ 11 */}
+                        {(c.plan_days ?? 0) <= 20 && (c.plan_days ?? 0) > 0 &&
+                         c.days_remaining <= 11 && (
+                          <button
+                            onClick={() => setExtendTarget(c)}
+                            className="text-[10px] text-green-400 border border-green-500/30
+                                       px-2 py-1 rounded-lg hover:bg-green-500/10 hover:border-green-500/50
+                                       transition-all cursor-pointer bg-transparent font-semibold"
+                            title="Extend subscription"
+                          >
+                            +Days
+                          </button>
+                        )}
                         <button
                           onClick={() => setActivateTarget(c)}
                           className="text-[10px] text-kayan-gold border border-kayan-border
@@ -454,6 +608,15 @@ export default function AdminSubscriptions() {
         <ActivateModal
           customer={activateTarget}
           onClose={() => setActivateTarget(null)}
+          onDone={() => loadCustomerSubs()}
+        />
+      )}
+
+      {/* Extend modal */}
+      {extendTarget && (
+        <ExtendSubModal
+          customer={extendTarget}
+          onClose={() => setExtendTarget(null)}
           onDone={() => loadCustomerSubs()}
         />
       )}

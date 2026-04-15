@@ -573,6 +573,19 @@ export async function fetchCustomerSubscriptions() {
   return data ?? []
 }
 
+/** Admin: extend an active 10 or 20-day subscription by 5 or 10 extra days. */
+export async function extendSubscription({ userId, extraDays, amount, adminId }) {
+  const { data, error } = await supabase.rpc('extend_subscription', {
+    p_user_id:    userId,
+    p_extra_days: extraDays,
+    p_amount:     amount,
+    p_admin_id:   adminId ?? null,
+  })
+  if (error) throw error
+  if (!data?.ok) throw new Error(data?.reason ?? 'Extension failed')
+  return data
+}
+
 export async function cancelSubscription(subId) {
   const { data, error } = await supabase
     .from('user_subscriptions')

@@ -37,6 +37,7 @@ import {
   activateSubscription,
   fetchCustomerSubscriptions,
   cancelSubscription,
+  extendSubscription,
   // Debt
   registerDebt,
   payDebt,
@@ -385,6 +386,22 @@ export function useKayan() {
     }
   }, [loadCustomerSubs]) // eslint-disable-line
 
+  /** Admin: extend a 10 or 20-day subscription by 5 or 10 days. */
+  const handleExtendSub = useCallback(async ({ userId, extraDays, amount }) => {
+    try {
+      const result = await extendSubscription({
+        userId, extraDays, amount,
+        adminId: store.profile?.id,
+      })
+      await loadCustomerSubs()
+      store.showToast(`✓ +${extraDays} days added — ${amount} EGP collected`, 'ok')
+      return result
+    } catch (err) {
+      store.showToast(`Extension failed: ${err.message}`, 'error')
+      throw err
+    }
+  }, [loadCustomerSubs]) // eslint-disable-line
+
   const handleCancelSub = useCallback(async (subId) => {
     try {
       await cancelSubscription(subId)
@@ -579,6 +596,7 @@ export function useKayan() {
     loadMySubscription,
     loadCustomerSubs,
     handleActivateSub,
+    handleExtendSub,
     handleCancelSub,
     // Debt
     loadDebts,

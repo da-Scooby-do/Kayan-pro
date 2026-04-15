@@ -115,6 +115,65 @@ function ActiveSubCard({ sub }) {
   )
 }
 
+// ── Extension options panel (10 & 20-day plans only) ─────────
+function ExtendPanel({ sub }) {
+  // Extension thresholds
+  const can5  = sub.days_remaining <= 6   // +5 days · 300 EGP
+  const can10 = sub.days_remaining <= 11  // +10 days · 500 EGP
+  if (!can10) return null  // nothing available yet
+
+  const options = [
+    can5  && { days: 5,  price: 300,  label: '+٥ أيام',  labelEn: '+5 Days'  },
+    can10 && { days: 10, price: 500,  label: '+١٠ أيام', labelEn: '+10 Days' },
+  ].filter(Boolean)
+
+  return (
+    <motion.div
+      initial={{ opacity: 0, y: 8 }}
+      animate={{ opacity: 1, y: 0 }}
+      className="glass rounded-3xl border border-kayan-gold/25 p-5 mb-6
+                 bg-kayan-gold/[0.03]"
+    >
+      {/* Header */}
+      <div className="flex items-center gap-2 mb-1">
+        <span className="text-kayan-gold text-base">⚡</span>
+        <p className="text-[9px] tracking-[3px] text-kayan-gold uppercase font-semibold">
+          Extend Available
+        </p>
+      </div>
+      <p className="text-sm font-bold mb-0.5">Add Extra Days</p>
+      <p className="text-xs text-kayan-sub mb-4 leading-relaxed">
+        You have <strong className="text-kayan-gold">{sub.days_remaining} days left</strong> — show
+        this to staff at reception to extend your subscription.
+      </p>
+
+      <div className="space-y-2">
+        {options.map(opt => (
+          <div key={opt.days}
+            className="flex items-center justify-between p-4 rounded-2xl border
+                       border-kayan-gold/30 bg-kayan-gold/[0.06]"
+          >
+            <div>
+              <p className="font-display text-xl font-bold text-kayan-gold">{opt.label}</p>
+              <p className="text-xs text-kayan-muted">{opt.labelEn} · added to your plan</p>
+            </div>
+            <div className="text-right">
+              <p className="font-display text-2xl font-bold text-kayan-gold">
+                {opt.price}
+              </p>
+              <p className="text-[10px] text-kayan-muted">EGP cash</p>
+            </div>
+          </div>
+        ))}
+      </div>
+
+      <p className="text-[9px] text-kayan-muted text-center mt-3">
+        ✦ Pay cash at reception — staff will apply it immediately
+      </p>
+    </motion.div>
+  )
+}
+
 // ── Single invite code pill ───────────────────────────────────
 function CodePill({ code, copied, onCopy }) {
   const isUsed    = code.used
@@ -436,6 +495,10 @@ export default function CustomerSubscription() {
       {mySubscription ? (
         <>
           <ActiveSubCard sub={mySubscription} />
+          {/* Extension panel — only for 10 and 20-day plans when days are low */}
+          {(mySubscription.plan_days ?? 0) <= 20 && (mySubscription.plan_days ?? 0) > 0 && (
+            <ExtendPanel sub={mySubscription} />
+          )}
           {/* Invite panel — only when there are invitations included */}
           {(mySubscription.invitations_total ?? 0) > 0 && (
             <InvitePanel sub={mySubscription} />
