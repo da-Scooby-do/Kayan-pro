@@ -582,7 +582,7 @@ export async function extendSubscription({ userId, extraDays, amount, adminId })
     p_admin_id:   adminId ?? null,
   })
   if (error) throw error
-  if (!data?.ok) throw new Error(data?.reason ?? 'Extension failed')
+  if (!data?.success) throw new Error(data?.error ?? 'Extension failed')
   return data
 }
 
