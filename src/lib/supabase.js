@@ -755,6 +755,55 @@ export async function applyInvitationToSession(sessionId, inviterId) {
   return { invitations_remaining: invData.remaining }
 }
 
+// ═══════════════════════════════════════════════════════════
+//  ADMIN INVITATION CREDITS
+// ═══════════════════════════════════════════════════════════
+
+/** Admin: generate one invite code (calls DB function, consumes 1 credit). */
+export async function generateAdminInviteCode(adminId) {
+  const { data, error } = await supabase.rpc('generate_admin_invite', {
+    p_admin_id: adminId,
+  })
+  if (error) throw error
+  if (!data?.ok) throw new Error(data?.reason ?? 'Could not generate invite code')
+  return data  // { ok, code, remaining }
+}
+
+/** Admin: fetch all codes this admin has generated. */
+export async function fetchAdminInviteCodes(adminId) {
+  const { data, error } = await supabase
+    .from('invitation_codes')
+    .select('*')
+    .eq('inviter_id', adminId)
+    .is('sub_id', null)          // admin codes only
+    .order('created_at', { ascending: false })
+  if (error) throw error
+  return data ?? []
+}
+
+/** Admin: get invite credit info (total and used). */
+export async function fetchAdminInviteCredits(adminId) {
+  const { data: profile, error: pErr } = await supabase
+    .from('profiles')
+    .select('invite_credits')
+    .eq('id', adminId)
+    .single()
+  if (pErr) throw pErr
+
+  const { count, error: cErr } = await supabase
+    .from('invitation_codes')
+    .select('id', { count: 'exact', head: true })
+    .eq('inviter_id', adminId)
+    .is('sub_id', null)
+  if (cErr) throw cErr
+
+  return {
+    total: profile.invite_credits ?? 0,
+    used:  count ?? 0,
+    remaining: (profile.invite_credits ?? 0) - (count ?? 0),
+  }
+}
+
 export async function fetchInviterInfo(userId) {
   const { data, error } = await supabase
     .from('user_subscriptions')

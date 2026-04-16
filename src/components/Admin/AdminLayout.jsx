@@ -7,6 +7,7 @@ import AdminSessions      from './AdminSessions'
 import AdminSubscriptions from './AdminSubscriptions'
 import AdminMenu          from './AdminMenu'
 import AdminDebts         from './AdminDebts'
+import AdminInvitations   from './AdminInvitations'
 import { useKayan }        from '@/hooks/useKayan'
 import { useAdminRealtime } from '@/hooks/useRealtime'
 import useKayanStore        from '@/store/useKayanStore'
@@ -19,6 +20,7 @@ const VIEWS = {
   subscriptions: AdminSubscriptions,
   menu:          AdminMenu,
   debts:         AdminDebts,
+  invitations:   AdminInvitations,
 }
 
 // BUG-10 FIX: Guard presence heartbeat — silently disabled if RPCs don't exist

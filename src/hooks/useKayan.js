@@ -50,6 +50,10 @@ import {
   fetchMyInvitationCodes,
   lookupInvitationCode,
   applyInvitationToSession,
+  // Admin invite credits
+  generateAdminInviteCode,
+  fetchAdminInviteCodes,
+  fetchAdminInviteCredits,
 } from '@/lib/supabase'
 import useKayanStore from '@/store/useKayanStore'
 
@@ -513,6 +517,37 @@ export function useKayan() {
     }
   }, []) // eslint-disable-line
 
+  // ── Admin Invite Credits ────────────────────────────────────
+
+  /** Admin: generate one invite code (consumes 1 credit). */
+  const handleGenerateAdminCode = useCallback(async (adminId) => {
+    try {
+      const result = await generateAdminInviteCode(adminId)
+      store.showToast('✦ Invite code generated!', 'ok')
+      return result
+    } catch (err) {
+      store.showToast(`Failed: ${err.message}`, 'error')
+      throw err
+    }
+  }, []) // eslint-disable-line
+
+  /** Admin: fetch all admin-generated codes. */
+  const loadAdminCodes = useCallback(async (adminId) => {
+    try {
+      return await fetchAdminInviteCodes(adminId)
+    } catch (err) {
+      store.showToast(`Failed to load codes: ${err.message}`, 'error')
+      return []
+    }
+  }, []) // eslint-disable-line
+
+  /** Admin: get credit summary { total, used, remaining }. */
+  const loadAdminCredits = useCallback(async (adminId) => {
+    try {
+      return await fetchAdminInviteCredits(adminId)
+    } catch { return { total: 0, used: 0, remaining: 0 } }
+  }, []) // eslint-disable-line
+
   /**
    * Admin: apply an invitation to an open session at checkout time.
    * Decrements the inviter's count and marks the session as subscription-based
@@ -610,6 +645,10 @@ export function useKayan() {
     loadMyInviteCodes,
     lookupInviteCode,
     handleApplyInvitation,
+    // Admin invite credits
+    handleGenerateAdminCode,
+    loadAdminCodes,
+    loadAdminCredits,
     // Bootstrap
     bootstrapAdmin,
     bootstrapCustomer,

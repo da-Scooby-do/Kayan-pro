@@ -8,6 +8,7 @@ const NAV_ITEMS = [
   { id: 'sessions',      icon: '⏱', label: 'Sessions'      },
   { id: 'debts',         icon: '💸', label: 'Debts'         },
   { id: 'subscriptions', icon: '✦',  label: 'Subscriptions' },
+  { id: 'invitations',   icon: '✉️', label: 'My Invites'    },
   { id: 'menu',          icon: '☕', label: 'Menu Items'    },
 ]
 
