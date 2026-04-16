@@ -535,9 +535,8 @@ export default function AdminSubscriptions() {
                             ✉ {c.invitations_remaining} inv
                           </p>
                         </div>
-                        {/* Extend button — 10/20-day plans, days_remaining ≤ 11 */}
-                        {(c.plan_days ?? 0) <= 20 && (c.plan_days ?? 0) > 0 &&
-                         c.days_remaining <= 11 && (
+                        {/* Extend button — shown for any active sub when days_remaining ≤ 11 */}
+                        {c.days_remaining <= 11 && c.days_remaining > 0 && (
                           <button
                             onClick={() => setExtendTarget(c)}
                             className="text-[10px] text-green-400 border border-green-500/30

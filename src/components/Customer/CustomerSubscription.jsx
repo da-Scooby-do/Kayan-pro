@@ -495,10 +495,8 @@ export default function CustomerSubscription() {
       {mySubscription ? (
         <>
           <ActiveSubCard sub={mySubscription} />
-          {/* Extension panel — only for 10 and 20-day plans when days are low */}
-          {(mySubscription.plan_days ?? 0) <= 20 && (mySubscription.plan_days ?? 0) > 0 && (
-            <ExtendPanel sub={mySubscription} />
-          )}
+          {/* Extension panel — available to all active subscribers when days are low */}
+          <ExtendPanel sub={mySubscription} />
           {/* Invite panel — only when there are invitations included */}
           {(mySubscription.invitations_total ?? 0) > 0 && (
             <InvitePanel sub={mySubscription} />
