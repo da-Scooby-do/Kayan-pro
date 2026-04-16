@@ -94,8 +94,8 @@ function CancelSubModal({ customer, onClose, onDone }) {
 // ── Extend subscription modal ────────────────────────────────
 // Available for 10 and 20-day plans when days_remaining is low
 const EXTEND_OPTIONS = [
-  { days: 5,  price: 300, label: '+5 Days',  labelAr: '+٥ أيام',  threshold: 6  },
-  { days: 10, price: 500, label: '+10 Days', labelAr: '+١٠ أيام', threshold: 11 },
+  { days: 5,  price: 300, label: '+5 Days',  labelAr: '+٥ أيام'  },
+  { days: 10, price: 500, label: '+10 Days', labelAr: '+١٠ أيام' },
 ]
 
 function ExtendSubModal({ customer, onClose, onDone }) {
@@ -104,9 +104,8 @@ function ExtendSubModal({ customer, onClose, onDone }) {
   const [loading,  setLoading]  = useState(false)
   const [error,    setError]    = useState(null)
 
-  const available = EXTEND_OPTIONS.filter(
-    opt => customer.days_remaining <= opt.threshold
-  )
+  // Both packs available for any eligible subscriber
+  const available = EXTEND_OPTIONS
 
   const confirm = async () => {
     if (!selected) return
@@ -182,7 +181,7 @@ function ExtendSubModal({ customer, onClose, onDone }) {
                         <span className="text-kayan-muted text-xs ml-2">{opt.label}</span>
                       </p>
                       <p className="text-[10px] text-kayan-muted mt-0.5">
-                        Available when ≤{opt.threshold} days left
+                        Added to current plan days
                       </p>
                     </div>
                     <p className="font-display text-xl font-bold text-kayan-gold">

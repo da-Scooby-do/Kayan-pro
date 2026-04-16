@@ -115,17 +115,15 @@ function ActiveSubCard({ sub }) {
   )
 }
 
-// ── Extension options panel (10 & 20-day plans only) ─────────
+// ── Extension options panel ───────────────────────────────────
 function ExtendPanel({ sub }) {
-  // Extension thresholds
-  const can5  = sub.days_remaining <= 6   // +5 days · 300 EGP
-  const can10 = sub.days_remaining <= 11  // +10 days · 500 EGP
-  if (!can10) return null  // nothing available yet
+  // Both packs available when days_remaining ≤ 11
+  if (sub.days_remaining > 11) return null
 
   const options = [
-    can5  && { days: 5,  price: 300,  label: '+٥ أيام',  labelEn: '+5 Days'  },
-    can10 && { days: 10, price: 500,  label: '+١٠ أيام', labelEn: '+10 Days' },
-  ].filter(Boolean)
+    { days: 5,  price: 300, label: '+٥ أيام',  labelEn: '+5 Days'  },
+    { days: 10, price: 500, label: '+١٠ أيام', labelEn: '+10 Days' },
+  ]
 
   return (
     <motion.div
