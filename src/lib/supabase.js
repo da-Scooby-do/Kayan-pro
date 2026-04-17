@@ -712,6 +712,7 @@ export async function fetchMyInvitationCodes(inviterId) {
 
 /** Admin: look up an invite code → returns the inviter's profile + subscription info. */
 export async function lookupInvitationCode(code) {
+  // Use ilike for case-insensitive match — admin codes are UPPERCASE, subscriber codes lowercase
   const { data, error } = await supabase
     .from('invitation_codes')
     .select(`
@@ -719,7 +720,7 @@ export async function lookupInvitationCode(code) {
       inviter:profiles!inviter_id ( id, full_name, phone, username ),
       sub:user_subscriptions!sub_id ( id, invitations_remaining, status )
     `)
-    .eq('code', code.toLowerCase().trim())
+    .ilike('code', code.trim())
     .eq('used', false)
     .gt('expires_at', new Date().toISOString())
     .maybeSingle()
