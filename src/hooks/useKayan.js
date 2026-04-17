@@ -11,6 +11,7 @@
 import { useCallback } from 'react'
 import {
   fetchRooms,
+  toggleRoomClosed,
   fetchAllSeats,
   fetchActiveSessions,
   fetchMyActiveSession,
@@ -72,6 +73,18 @@ export function useKayan() {
       store.showToast(`Failed to load rooms: ${err.message}`, 'error')
     }
   }, []) // eslint-disable-line react-hooks/exhaustive-deps
+
+  const handleToggleRoomClosed = useCallback(async (roomId, closed, reason = null) => {
+    try {
+      await toggleRoomClosed(roomId, closed, reason)
+      // Refresh rooms so is_closed reflects immediately
+      const rooms = await fetchRooms()
+      store.setRooms(rooms)
+      store.showToast(closed ? '🔒 Room closed' : '✓ Room reopened', 'ok')
+    } catch (err) {
+      store.showToast(`Failed: ${err.message}`, 'error')
+    }
+  }, []) // eslint-disable-line
 
   const loadSeats = useCallback(async () => {
     try {
@@ -602,6 +615,7 @@ export function useKayan() {
   return {
     // Loaders
     loadRooms,
+    handleToggleRoomClosed,
     loadSeats,
     loadMenu,
     loadAllMenu,

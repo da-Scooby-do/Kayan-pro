@@ -162,6 +162,17 @@ export async function fetchRooms() {
   return data
 }
 
+/** Admin: open or close a room (maintenance / reserved). */
+export async function toggleRoomClosed(roomId, closed, reason = null) {
+  const { data, error } = await supabase.rpc('toggle_room_closed', {
+    p_room_id: roomId,
+    p_closed:  closed,
+    p_reason:  reason,
+  })
+  if (error) throw error
+  return data
+}
+
 /**
  * Fetch all seats for every room.
  * Returns a map: { [roomId]: Seat[] }
