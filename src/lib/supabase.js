@@ -284,10 +284,11 @@ export async function openSession({ userId, seatId, packageId = 1, adminId }) {
  * Admin: call the checkout_session() PostgreSQL function.
  * Calculates final bill (with cap), closes the session, frees the seat.
  */
-export async function checkoutSession(sessionId, adminId) {
+export async function checkoutSession(sessionId, adminId, overrideAmount = null) {
   const { data, error } = await supabase.rpc('checkout_session', {
-    p_session_id: sessionId,
-    p_admin_id:   adminId ?? null,
+    p_session_id:      sessionId,
+    p_admin_id:        adminId ?? null,
+    p_override_amount: overrideAmount !== null ? Number(overrideAmount) : null,
   })
   if (error) throw error
   return data

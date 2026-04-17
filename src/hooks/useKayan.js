@@ -239,12 +239,13 @@ export function useKayan() {
    *   • marks session as checked_out
    *   • frees the seat
    */
-  const handleCheckout = useCallback(async (sessionId, adminId) => {
+  const handleCheckout = useCallback(async (sessionId, adminId, overrideAmount = null) => {
     try {
-      const result = await checkoutSession(sessionId, adminId)
+      const result = await checkoutSession(sessionId, adminId, overrideAmount)
       store.removeSession(sessionId)
       await loadSeats()
-      store.showToast(`✓ Checkout complete — ${result.total_cost} EGP collected.`, 'ok')
+      const label = overrideAmount !== null ? `${overrideAmount} EGP (adjusted)` : `${result.total_cost} EGP`
+      store.showToast(`✓ Checkout complete — ${label} collected.`, 'ok')
       return result
     } catch (err) {
       store.showToast(`Checkout failed: ${err.message}`, 'error')
