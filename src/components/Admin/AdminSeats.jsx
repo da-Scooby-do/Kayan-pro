@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react'
-import { AnimatePresence } from 'framer-motion'
+import { AnimatePresence, motion } from 'framer-motion'
 import { useKayan } from '@/hooks/useKayan'
 import useKayanStore from '@/store/useKayanStore'
 import Pill from '@/components/Shared/Pill'
@@ -9,13 +9,14 @@ import ChangeSeatModal from './ChangeSeatModal'
 import AdminOpenSession from './AdminOpenSession'
 
 export default function AdminSeats() {
-  const { loadSeats, handleToggleSeat } = useKayan()
+  const { loadSeats, handleToggleSeat, handleToggleRoomClosed } = useKayan()
   const rooms = useKayanStore(s => s.rooms)
   const seats = useKayanStore(s => s.seats)
 
   const [selectedRoomId,    setSelectedRoomId]    = useState(null)
   const [changeSeatTarget,  setChangeSeatTarget]  = useState(null)
   const [openSessionSeatId, setOpenSessionSeatId] = useState(null)
+  const [closingRoom,       setClosingRoom]       = useState(false)
 
   useEffect(() => {
     if (rooms.length && selectedRoomId === null) setSelectedRoomId(rooms[0].id)
@@ -37,6 +38,7 @@ export default function AdminSeats() {
   const roomOcc      = currentSeats.filter(s =>  s.is_occupied).length
 
   const onSeatClick = (seat) => {
+    if (currentRoom?.is_closed) return  // room is closed — no actions allowed
     if (!seat.is_occupied) {
       // Open the full check-in flow with this seat pre-selected
       setOpenSessionSeatId(seat.id)
@@ -78,34 +80,84 @@ export default function AdminSeats() {
 
           <div className="flex items-start justify-between flex-wrap gap-3 mb-5">
             <div>
-              <h3 className="font-display text-xl font-semibold">
-                {currentRoom.name}
-                <span className="text-kayan-muted text-sm ml-2 font-normal">
-                  {currentRoom.name_ar}
-                </span>
-              </h3>
+              <div className="flex items-center gap-2 flex-wrap">
+                <h3 className="font-display text-xl font-semibold">
+                  {currentRoom.name}
+                  <span className="text-kayan-muted text-sm ml-2 font-normal">
+                    {currentRoom.name_ar}
+                  </span>
+                </h3>
+                {currentRoom.is_closed && (
+                  <span className="text-[9px] font-bold text-red-400 bg-red-500/10
+                                   border border-red-500/30 px-2 py-0.5 rounded-full">
+                    🔒 CLOSED
+                  </span>
+                )}
+              </div>
               <p className="text-kayan-muted text-sm mt-0.5">
                 Capacity {currentRoom.capacity} seats
+                {currentRoom.closed_reason && (
+                  <span className="ml-2 text-red-400/70">· {currentRoom.closed_reason}</span>
+                )}
               </p>
             </div>
-            <div className="flex gap-5">
-              <div className="text-center">
-                <p className="text-2xl font-bold text-green-400">{roomFree}</p>
-                <p className="text-[9px] text-kayan-muted tracking-wider uppercase">Free</p>
+            <div className="flex items-center gap-4">
+              <div className="flex gap-5">
+                <div className="text-center">
+                  <p className="text-2xl font-bold text-green-400">{roomFree}</p>
+                  <p className="text-[9px] text-kayan-muted tracking-wider uppercase">Free</p>
+                </div>
+                <div className="text-center">
+                  <p className="text-2xl font-bold text-red-400">{roomOcc}</p>
+                  <p className="text-[9px] text-kayan-muted tracking-wider uppercase">Occupied</p>
+                </div>
               </div>
-              <div className="text-center">
-                <p className="text-2xl font-bold text-red-400">{roomOcc}</p>
-                <p className="text-[9px] text-kayan-muted tracking-wider uppercase">Occupied</p>
-              </div>
+              {/* Close / Open room button */}
+              <button
+                disabled={closingRoom}
+                onClick={async () => {
+                  setClosingRoom(true)
+                  await handleToggleRoomClosed(
+                    currentRoom.id,
+                    !currentRoom.is_closed,
+                    currentRoom.is_closed ? null : null
+                  )
+                  setClosingRoom(false)
+                }}
+                className={`text-xs font-semibold px-3 py-2 rounded-xl border transition-all
+                  cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed
+                  ${currentRoom.is_closed
+                    ? 'bg-green-500/10 border-green-500/30 text-green-400 hover:bg-green-500/20'
+                    : 'bg-red-500/10 border-red-500/30 text-red-400 hover:bg-red-500/20'
+                  }`}
+              >
+                {closingRoom ? '…' : currentRoom.is_closed ? '✓ Open Room' : '🔒 Close Room'}
+              </button>
             </div>
           </div>
 
-          <RoomFloorPlan
-            roomId={selectedRoomId}
-            seats={currentSeats}
-            isAdmin={true}
-            onSeatClick={onSeatClick}
-          />
+          {/* Closed room overlay */}
+          {currentRoom.is_closed ? (
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              className="rounded-xl border border-red-500/25 bg-red-500/[0.06] p-8 text-center"
+            >
+              <p className="text-3xl mb-3">🔒</p>
+              <p className="font-semibold text-red-400 mb-1">Room is Closed</p>
+              <p className="text-kayan-muted text-sm">No new sessions can be opened in this room.</p>
+              {currentRoom.closed_reason && (
+                <p className="text-xs text-red-400/70 mt-2">{currentRoom.closed_reason}</p>
+              )}
+            </motion.div>
+          ) : (
+            <RoomFloorPlan
+              roomId={selectedRoomId}
+              seats={currentSeats}
+              isAdmin={true}
+              onSeatClick={onSeatClick}
+            />
+          )}
         </div>
       )}
 
