@@ -21,6 +21,10 @@ export default function CheckoutModal({ session, onClose, onSuccess }) {
   const [loading,     setLoading]     = useState(false)
   const [fetching,    setFetching]    = useState(true)
 
+  // Manual override
+  const [overrideMode,   setOverrideMode]   = useState(false)
+  const [overrideInput,  setOverrideInput]  = useState('')
+
   // Debt flow
   const [debtConfirm, setDebtConfirm] = useState(false)
   const [debtLoading, setDebtLoading] = useState(false)
@@ -46,10 +50,13 @@ export default function CheckoutModal({ session, onClose, onSuccess }) {
   }, [session?.id]) // eslint-disable-line react-hooks/exhaustive-deps
 
   // ── Normal checkout ──────────────────────────────────────────
+  const overrideAmount = overrideMode && overrideInput !== '' ? Number(overrideInput) : null
+  const effectiveTotal = overrideAmount !== null ? overrideAmount : (bill?.total_cost ?? null)
+
   const confirm = async () => {
     setLoading(true)
     try {
-      const result = await handleCheckout(session.id, profile?.id)
+      const result = await handleCheckout(session.id, profile?.id, overrideAmount)
       onSuccess?.(result)
     } catch { /* toasted in hook */ } finally {
       setLoading(false)
@@ -123,8 +130,7 @@ export default function CheckoutModal({ session, onClose, onSuccess }) {
       note: bill.is_capped ? 'daily cap applied' : null, noteColor: '#22C55E' },
     { label: 'Drinks & snacks', value: `${bill.orders_total} EGP` },
     { divider: true },
-    { label: 'TOTAL',           value: `${bill.total_cost} EGP`,
-      bold: true, valueColor: '#C9A84C' },
+    { label: 'TOTAL', value: `${bill.total_cost} EGP`, bold: true, valueColor: '#C9A84C', isTotal: true },
   ] : []
 
   return (
@@ -171,13 +177,65 @@ export default function CheckoutModal({ session, onClose, onSuccess }) {
           {fetching ? (
             <div className="text-center py-8 text-kayan-muted text-sm">Calculating bill…</div>
           ) : (
-            <div className="space-y-3 mb-7">
+            <div className="space-y-3 mb-5">
               {rows.map((r, i) =>
                 r.divider ? (
                   <div key={i} className="border-t border-white/[0.05] my-1" />
+                ) : r.isTotal ? (
+                  /* TOTAL row with optional override */
+                  <div key={i}>
+                    <div className="flex justify-between items-center">
+                      <span className="text-sm font-bold text-kayan-text">TOTAL</span>
+                      <div className="flex items-center gap-2">
+                        {overrideMode ? (
+                          <div className="flex items-center gap-1">
+                            <input
+                              type="number"
+                              min="0"
+                              value={overrideInput}
+                              onChange={e => setOverrideInput(e.target.value)}
+                              placeholder={String(bill.total_cost)}
+                              autoFocus
+                              className="w-20 text-right text-lg font-bold text-kayan-gold
+                                         bg-transparent border-b border-kayan-gold/50 outline-none
+                                         [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none
+                                         [&::-webkit-inner-spin-button]:appearance-none"
+                            />
+                            <span className="text-sm text-kayan-gold font-bold">EGP</span>
+                            <button
+                              type="button"
+                              onClick={() => { setOverrideMode(false); setOverrideInput('') }}
+                              className="text-kayan-muted hover:text-kayan-sub text-xs ml-1
+                                         bg-transparent border-none cursor-pointer"
+                            >✕</button>
+                          </div>
+                        ) : (
+                          <>
+                            <span className="text-xl font-bold" style={{ color: '#C9A84C' }}>
+                              {bill.total_cost} EGP
+                            </span>
+                            <button
+                              type="button"
+                              onClick={() => { setOverrideMode(true); setOverrideInput(String(bill.total_cost)) }}
+                              className="text-[10px] text-kayan-muted hover:text-kayan-gold
+                                         bg-transparent border-none cursor-pointer transition-colors"
+                              title="Adjust amount manually"
+                            >✏️</button>
+                          </>
+                        )}
+                      </div>
+                    </div>
+                    {/* Override indicator */}
+                    {overrideMode && overrideInput !== '' && Number(overrideInput) !== bill.total_cost && (
+                      <div className="flex justify-between items-center mt-1.5 px-1">
+                        <span className="text-[9px] text-kayan-muted">Original</span>
+                        <span className="text-[9px] text-kayan-muted line-through">{bill.total_cost} EGP</span>
+                      </div>
+                    )}
+                  </div>
                 ) : (
                   <div key={i} className="flex justify-between items-center">
-                    <span className={r.bold ? 'text-sm font-bold text-kayan-text' : 'text-sm text-kayan-sub'}>
+                    <span className="text-sm text-kayan-sub">
                       {r.label}
                       {r.note && (
                         <span className="ml-2 text-[9px] font-medium" style={{ color: r.noteColor }}>
@@ -185,12 +243,7 @@ export default function CheckoutModal({ session, onClose, onSuccess }) {
                         </span>
                       )}
                     </span>
-                    <span
-                      className={r.bold ? 'text-xl font-bold' : 'text-sm font-medium text-kayan-text'}
-                      style={r.valueColor ? { color: r.valueColor } : {}}
-                    >
-                      {r.value}
-                    </span>
+                    <span className="text-sm font-medium text-kayan-text">{r.value}</span>
                   </div>
                 )
               )}
@@ -202,7 +255,7 @@ export default function CheckoutModal({ session, onClose, onSuccess }) {
             <div className="rounded-xl bg-orange-500/[0.08] border border-orange-500/25 p-4 mb-4">
               <p className="text-xs text-orange-300 font-semibold mb-1">⚠ Register as Debt?</p>
               <p className="text-[10px] text-kayan-muted mb-4 leading-relaxed">
-                {bill?.total_cost ?? '—'} EGP will be added to {session.customer_name}'s
+                {effectiveTotal ?? '—'} EGP will be added to {session.customer_name}'s
                 tab. The session closes now and the amount is collected next visit.
               </p>
               {debtError && (
@@ -366,7 +419,7 @@ export default function CheckoutModal({ session, onClose, onSuccess }) {
                   onClick={confirm} disabled={loading || fetching}
                   className="btn-gold flex-[2] disabled:opacity-50"
                 >
-                  {loading ? 'Processing…' : `Confirm · ${bill?.total_cost ?? '—'} EGP`}
+                  {loading ? 'Processing…' : `Confirm · ${effectiveTotal ?? '—'} EGP`}
                 </button>
               </div>
 
